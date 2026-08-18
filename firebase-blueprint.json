@@ -1,0 +1,54 @@
+{
+  "entities": {
+    "users": {
+      "title": "User Profile",
+      "description": "User profile information stored per UID",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Display name of the user" },
+        "email": { "type": "string", "description": "Email address" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Account creation timestamp" }
+      },
+      "required": ["name", "email", "createdAt"]
+    },
+    "musicTracks": {
+      "title": "Music Tracks",
+      "description": "Background ambient audio tracks stored in Firebase",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Track title" },
+        "url": { "type": "string", "description": "Audio source URL or base64 chunked data" },
+        "size": { "type": "string", "description": "File size label" },
+        "addedAt": { "type": "number", "description": "Timestamp when added" }
+      },
+      "required": ["name", "addedAt"]
+    },
+    "personalityAudio": {
+      "title": "Personality Audio",
+      "description": "Custom voice lines and audio recordings for Tak personality traits stored in Firebase",
+      "type": "object",
+      "properties": {
+        "traitId": { "type": "string", "description": "Personality trait ID" },
+        "audioUrl": { "type": "string", "description": "Audio source URL or base64 chunked data" },
+        "isChunked": { "type": "boolean", "description": "Whether the audio is split across chunk subcollection" },
+        "chunksCount": { "type": "number", "description": "Number of chunks if split" },
+        "updatedAt": { "type": "number", "description": "Timestamp when saved" }
+      },
+      "required": ["traitId", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/musicTracks/{trackId}": {
+      "schema": { "$ref": "#/entities/musicTracks" },
+      "description": "Uploaded background music track documents"
+    },
+    "/personalityAudio/{traitId}": {
+      "schema": { "$ref": "#/entities/personalityAudio" },
+      "description": "Custom voice audio for personality traits"
+    },
+    "/appData/{document=**}": {
+      "schema": { "type": "object" },
+      "description": "Global application configuration and data"
+    }
+  }
+}

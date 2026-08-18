@@ -1,0 +1,228 @@
+@import "tailwindcss";
+
+html, body {
+  scroll-behavior: smooth;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  max-width: 100%;
+  width: 100%;
+}
+
+@theme {
+  --font-fredoka: 'Fredoka', cursive, sans-serif;
+  --font-poppins: 'Poppins', sans-serif;
+  --font-sans: 'Inter', sans-serif;
+
+  --color-hutao-crimson: #e63946;
+  --color-hutao-darkred: #a81c1c;
+  --color-hutao-dark: #140808;
+  --color-hutao-darker: #0d0404;
+  --color-hutao-amber: #f77f00;
+  --color-hutao-gold: #fcbf49;
+  --color-hutao-ghost: #e0f2fe;
+}
+
+@layer utilities {
+  .font-display {
+    font-family: 'Fredoka', cursive, sans-serif;
+  }
+  .font-poppins {
+    font-family: 'Poppins', sans-serif;
+  }
+  
+  .glass-card {
+    background: rgba(30, 14, 16, 0.65);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(230, 57, 70, 0.2);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    transform: translateZ(0);
+    max-width: 100%;
+    overflow-wrap: break-word;
+  }
+
+  @media (max-width: 640px) {
+    .glass-card {
+      padding-left: 1rem;
+      padding-right: 1rem;
+      border-radius: 1.25rem;
+    }
+  }
+
+  .glass-card-hover {
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+    will-change: transform;
+  }
+  .glass-card-hover::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -150%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      115deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.02) 25%,
+      rgba(252, 191, 73, 0.22) 50%,
+      rgba(230, 57, 70, 0.15) 70%,
+      transparent 100%
+    );
+    transform: skewX(-25deg);
+    transition: none;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .glass-card-hover:hover::before {
+    left: 150%;
+    transition: left 0.85s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .glass-card-hover:hover {
+    border-color: rgba(247, 127, 0, 0.5);
+    box-shadow: 0 12px 40px 0 rgba(230, 57, 70, 0.25);
+    transform: translateY(-6px);
+  }
+
+  .glass-nav {
+    background: rgba(18, 10, 10, 0.75);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(230, 57, 70, 0.15);
+    transform: translateZ(0);
+  }
+
+  .text-glow {
+    text-shadow: 0 0 12px rgba(230, 57, 70, 0.6), 0 0 24px rgba(247, 127, 0, 0.3);
+  }
+  .text-glow-gold {
+    text-shadow: 0 0 10px rgba(252, 191, 73, 0.7);
+  }
+  .ghost-glow {
+    filter: drop-shadow(0 0 15px rgba(224, 242, 254, 0.7)) drop-shadow(0 0 25px rgba(247, 127, 0, 0.4));
+  }
+}
+
+/* Custom animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-15px) rotate(3deg);
+  }
+}
+
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-25px) rotate(4deg);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes petal-fall {
+  0% {
+    transform: translateY(-50px) rotate(0deg) translateX(0px);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.8;
+  }
+  90% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(105vh) rotate(360deg) translateX(80px);
+    opacity: 0;
+  }
+}
+
+@keyframes ember-rise {
+  0% {
+    transform: translateY(100vh) scale(0.5);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.9;
+  }
+  80% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(-50px) scale(1.2);
+    opacity: 0;
+  }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.animate-float-slow {
+  animation: float-slow 7s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+/* Custom scrollbar - Desktop Only */
+@media (min-width: 769px) {
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #140808;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #5c1d24;
+    border-radius: 4px;
+    border: 1px solid #140808;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #e63946;
+  }
+}
+
+/* Hide scrollbar completely on mobile devices to prevent red bar / right-side space */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  html, body, #root {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Hide scrollbar utility for sleek mobile carousels & tabs */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+

@@ -1,0 +1,6 @@
+{
+  "name": "Tak Fan Website",
+  "description": "A modern, playful single-page fan website inspired by Tak from Genshin Impact featuring floating ghosts, interactive cards, gallery, quotes, and fun facts.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

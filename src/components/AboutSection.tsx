@@ -1,0 +1,170 @@
+import React, { useState } from 'react';
+import { motion } from 'motion/react';
+import { Ghost, Sparkles, Award, Scroll, Feather, MapPin, Maximize2 } from 'lucide-react';
+import { useAppData } from '../context/AppDataContext';
+import { LazyImage } from './LazyImage';
+import { ImageViewerModal } from './ImageViewerModal';
+import { SectionHeader } from './SectionHeader';
+
+export const AboutSection: React.FC = () => {
+  const { siteImages, aboutContent } = useAppData();
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+
+  const stats = [
+    { label: 'Title', value: 'Director', icon: Award, color: 'text-amber-400' },
+    { label: 'Affiliation', value: 'Wangsheng Funeral Parlor', icon: MapPin, color: 'text-rose-400' },
+  ];
+
+  return (
+    <section id="about" className="relative py-24 z-10 overflow-hidden">
+      {/* Background glow */}
+      <div className="absolute top-1/2 right-10 -translate-y-1/2 w-96 h-96 bg-red-900/10 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Section Header */}
+        <SectionHeader
+          badge={aboutContent?.badgeText || '77th Director • Wangsheng Funeral Parlor'}
+          chineseSymbol="堂"
+          titlePrefix={aboutContent?.titlePrefix || 'About'}
+          titleHighlight={aboutContent?.titleName || 'Tak'}
+          subtitle={aboutContent?.description}
+        />
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          {/* Left Side Decorative Card */}
+          <motion.div
+            initial={{ opacity: 0, x: -40 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="lg:col-span-5 relative"
+          >
+            {/* Glass Container */}
+            <div className="glass-card rounded-3xl p-8 border border-red-500/30 relative overflow-hidden shadow-2xl">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+
+              <div className="flex items-center gap-4 mb-6">
+                <div
+                  onClick={() => setIsViewerOpen(true)}
+                  className="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-amber-400/60 shadow-lg shadow-red-600/40 shrink-0 bg-red-950 cursor-pointer group/avatar"
+                  title="Click to view full portrait"
+                >
+                  <LazyImage
+                    src={siteImages.aboutAvatar}
+                    alt="Portrait"
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover/avatar:scale-110"
+                    containerClassName="w-full h-full"
+                  />
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/avatar:opacity-100 transition-opacity flex items-center justify-center text-amber-300">
+                    <Maximize2 className="w-4 h-4" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-display text-2xl font-bold text-white">{aboutContent?.characterName || 'Tak'}</h3>
+                  <p className="text-xs text-amber-300 font-sans tracking-wide">{aboutContent?.characterRole || 'Director • Versatile Poet'}</p>
+                </div>
+              </div>
+
+              <p className="text-rose-100/80 text-sm leading-relaxed mb-6 font-sans">
+                {aboutContent?.characterBio}
+              </p>
+
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 gap-3 pt-4 border-t border-red-500/20">
+                {stats.map((stat, idx) => {
+                  const Icon = stat.icon;
+                  return (
+                    <div key={idx} className="bg-[#140808]/80 p-3 rounded-2xl border border-red-500/15 flex items-center gap-3">
+                      <Icon className={`w-5 h-5 ${stat.color}`} />
+                      <div>
+                        <p className="text-[10px] text-rose-300/60 uppercase font-bold">{stat.label}</p>
+                        <p className="text-xs font-display font-semibold text-white">{stat.value}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Decorative Floating Ghost */}
+            <div
+              className="absolute bottom-0 right-0 sm:-bottom-6 sm:-right-6 w-20 h-20 sm:w-24 sm:h-24 animate-float-slow hover:scale-110 transition-transform pointer-events-auto z-10"
+              title="Ghost companion"
+            >
+              <div className="w-full h-full glass-card rounded-full flex items-center justify-center border-amber-400/40 shadow-[0_0_20px_rgba(247,127,0,0.4)]">
+                <Ghost className="w-12 h-12 text-amber-300" />
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Right Side Lore & Details */}
+          <motion.div
+            initial={{ opacity: 0, x: 40 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="lg:col-span-7 flex flex-col gap-6"
+          >
+            {/* Lore Box 1: The Director Duties */}
+            <div className="glass-card rounded-3xl p-6 border border-red-500/20 hover:border-amber-400/40 transition-colors">
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-2xl bg-red-950/80 border border-red-500/30 text-amber-400">
+                  <Scroll className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-display font-bold text-lg text-amber-200 mb-1">Guardian of the Sacred Boundary</h4>
+                  <p className="text-rose-100/75 text-sm leading-relaxed">
+                    Wangsheng Funeral Parlor has served Liyue for generations. Tak carries out solemn rites for departed souls, ensuring they transition peacefully to the spirit realm without regrets. She views death not as something tragic, but as a peaceful return to nature.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Lore Box 2: The Famous Versectile Poet */}
+            <div className="glass-card rounded-3xl p-6 border border-red-500/20 hover:border-amber-400/40 transition-colors">
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-2xl bg-amber-950/80 border border-amber-500/30 text-amber-300">
+                  <Feather className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-display font-bold text-lg text-amber-200 mb-1">The Versectile Poet of Liyue</h4>
+                  <p className="text-rose-100/75 text-sm leading-relaxed">
+                    Tak is widely celebrated for her eccentric poetry. Her verses spread like wildfire among Liyue children and merchants alike. Her most legendary composition is the "Hilichurl Song", a playful tune recited across Teyvat!
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Lore Box 3: The Playful Prankster */}
+            <div className="glass-card rounded-3xl p-6 border border-red-500/20 hover:border-amber-400/40 transition-colors">
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-2xl bg-rose-950/80 border border-rose-500/30 text-rose-300">
+                  <Sparkles className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-display font-bold text-lg text-amber-200 mb-1">Spirited Prankster & Friend</h4>
+                  <p className="text-rose-100/75 text-sm leading-relaxed">
+                    Whether popping up behind Zhongli to give him unexpected homework, sharing poetry with Baizhu, or organizing poetry battles with Xiangling, Tak brings infectious warmth and laughter wherever she walks.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Full Picture Viewer Modal */}
+      <ImageViewerModal
+        isOpen={isViewerOpen}
+        image={{
+          src: siteImages.aboutAvatar,
+          title: aboutContent?.characterName || 'Tak',
+          caption: `${aboutContent?.characterRole || '77th Director'} - Wangsheng Funeral Parlor`,
+          tags: ['About', 'Portrait', 'Tak'],
+        }}
+        onClose={() => setIsViewerOpen(false)}
+      />
+    </section>
+  );
+};
