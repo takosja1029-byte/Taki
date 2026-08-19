@@ -212,6 +212,16 @@ class AmbientMusicEngine {
 
   private async initLocalPlaylist() {
     try {
+      // One-time forced migration: clear out any pre-existing playlist from earlier
+      // (broken Firebase/freesound-based) testing so everyone gets the new working songs.
+      const migrationDone = localStorage.getItem('hu_tao_music_v2_migration');
+      if (!migrationDone) {
+        await removeIDBItem('hu_tao_music_playlist');
+        await removeIDBItem('hu_tao_ambient_music_custom_url');
+        localStorage.removeItem('hu_tao_ambient_music_custom_url');
+        localStorage.setItem('hu_tao_music_v2_migration', 'done');
+      }
+
       const raw = await getIDBItem('hu_tao_music_playlist');
       if (raw) {
         const parsed = JSON.parse(raw);
