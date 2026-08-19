@@ -31,26 +31,27 @@ export interface MusicTrack {
 
 type Listener = (isPlaying: boolean) => void;
 
-// Default high quality fallback background tracks (peaceful Genshin / Hu Tao oriental ambient music)
+// Default background tracks — your own uploaded songs, served directly from /public/music
+// (no Firebase, no external CDN, no quota limits — just static files bundled with the site)
 export const DEFAULT_ORIENTAL_TRACKS: MusicTrack[] = [
   {
     id: 'default_track_1',
-    name: 'Wangsheng Twilight Flute',
-    url: 'https://raw.githubusercontent.com/mdn/webaudio-examples/main/audio-analyser/viper.mp3',
+    name: 'Let the Living Beware (Hu Tao Theme)',
+    url: '/music/song1.mp3',
     size: 'Preset',
     addedAt: 1,
   },
   {
     id: 'default_track_2',
-    name: 'Liyue Nightfall Guqin',
-    url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+    name: 'I Love You So (Sped Up Reverb)',
+    url: '/music/song2.mp3',
     size: 'Preset',
     addedAt: 2,
   },
   {
     id: 'default_track_3',
-    name: 'Silk Flower Serenade',
-    url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+    name: 'Chinese New Year Song',
+    url: '/music/song3.mp3',
     size: 'Preset',
     addedAt: 3,
   },
@@ -63,8 +64,8 @@ class AmbientMusicEngine {
   private listeners: Set<Listener> = new Set();
   private volume: number = 0.35;
   private customAudioElement: HTMLAudioElement | null = null;
-  private mode: 'synth' | 'custom' = 'synth';
-  private playlist: MusicTrack[] = [];
+  private mode: 'synth' | 'custom' = 'custom';
+  private playlist: MusicTrack[] = [...DEFAULT_ORIENTAL_TRACKS];
   private currentTrackIndex: number = 0;
 
   private currentAudioSrc: string = '';
@@ -238,8 +239,17 @@ class AmbientMusicEngine {
           await setIDBItem('hu_tao_music_playlist', JSON.stringify(this.playlist));
         }
       }
+      // Fall back to the 3 built-in default tracks if nothing else was found locally
+      if (this.playlist.length === 0) {
+        this.playlist = [...DEFAULT_ORIENTAL_TRACKS];
+        await setIDBItem('hu_tao_music_playlist', JSON.stringify(this.playlist));
+      }
     } catch (e) {
       console.warn('Error loading playlist from IDB:', e);
+      // Even on error, make sure something plays
+      if (this.playlist.length === 0) {
+        this.playlist = [...DEFAULT_ORIENTAL_TRACKS];
+      }
     }
 
     if (this.playlist.length > 0) {
