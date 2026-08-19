@@ -372,6 +372,11 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         docRef,
         (snapshot) => {
           if (!isMounted) return;
+          if (isFirestoreQuotaExceeded()) {
+            // Cloud writes are currently blocked, so the cloud copy may be stale/out of date
+            // compared to local edits. Trust local state instead of overwriting it.
+            return;
+          }
           if (snapshot.exists()) {
             const data = snapshot.data();
             if (data.galleryItems !== undefined) setGalleryItems(sanitizeGalleryItems(data.galleryItems));

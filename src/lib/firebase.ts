@@ -29,11 +29,23 @@ export const storage = getStorage(app);
 
 // Firestore Quota Detection & Graceful Fallback
 let quotaExceededState = false;
+const QUOTA_FLAG_KEY = "firestore_quota_exceeded";
+const QUOTA_FLAG_TIMESTAMP_KEY = "firestore_quota_exceeded_at";
+const QUOTA_COOLDOWN_MS = 12 * 60 * 60 * 1000; // treat quota as reset after 12 hours
 
 export function isFirestoreQuotaExceeded(): boolean {
   if (quotaExceededState) return true;
   try {
-    if (typeof sessionStorage !== "undefined" && sessionStorage.getItem("firestore_quota_exceeded") === "true") {
+    if (typeof sessionStorage !== "undefined" && sessionStorage.getItem(QUOTA_FLAG_KEY) === "true") {
+      // Auto-expire the flag so a stale flag from hours ago doesn't block syncing forever,
+      // even after Firebase's own daily quota has actually reset.
+      const markedAt = Number(sessionStorage.getItem(QUOTA_FLAG_TIMESTAMP_KEY) || 0);
+      if (markedAt && Date.now() - markedAt > QUOTA_COOLDOWN_MS) {
+        sessionStorage.removeItem(QUOTA_FLAG_KEY);
+        sessionStorage.removeItem(QUOTA_FLAG_TIMESTAMP_KEY);
+        quotaExceededState = false;
+        return false;
+      }
       quotaExceededState = true;
       return true;
     }
@@ -45,7 +57,8 @@ export function markFirestoreQuotaExceeded(): void {
   quotaExceededState = true;
   try {
     if (typeof sessionStorage !== "undefined") {
-      sessionStorage.setItem("firestore_quota_exceeded", "true");
+      sessionStorage.setItem(QUOTA_FLAG_KEY, "true");
+      sessionStorage.setItem(QUOTA_FLAG_TIMESTAMP_KEY, String(Date.now()));
     }
   } catch (e) {}
 }
