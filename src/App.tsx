@@ -18,6 +18,20 @@ export default function App() {
   const [adminOpen, setAdminOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
 
+  // If the URL has a section hash (e.g. #personality) on load/refresh, scroll to it
+  // instead of always landing on the top of the page.
+  React.useEffect(() => {
+    if (window.location.hash) {
+      const target = document.querySelector(window.location.hash);
+      if (target) {
+        // Slight delay lets layout/images settle first so the scroll position is accurate
+        setTimeout(() => {
+          target.scrollIntoView({ behavior: 'auto' });
+        }, 100);
+      }
+    }
+  }, []);
+
   return (
     <AuthProvider>
       <AppDataProvider>

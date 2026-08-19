@@ -125,6 +125,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAdmin, onOpenAuth }) => {
     const target = document.querySelector(href);
     if (target) {
       target.scrollIntoView({ behavior: 'smooth' });
+      // Remember which section we're on so a refresh returns here instead of the top
+      window.history.replaceState(null, '', href);
     }
   };
 
