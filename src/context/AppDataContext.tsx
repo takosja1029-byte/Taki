@@ -302,6 +302,18 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         audioUrl: t.audioUrl && t.audioUrl.startsWith('data:') ? '[FIREBASE_AUDIO]' : t.audioUrl,
       }));
     }
+    // Site images (hero banner, ghost companion, about portrait) are uploaded as full-resolution
+    // base64 photos which alone can exceed Firestore's 1MB per-document limit. Rather than risk
+    // silently failing the whole write, keep images local-only (already saved reliably to
+    // localStorage) and don't send them to the shared cloud document at all.
+    if (sanitizedPartial.siteImages && typeof sanitizedPartial.siteImages === 'object') {
+      const imgs = sanitizedPartial.siteImages as Record<string, string>;
+      const markerImages: Record<string, string> = {};
+      for (const key of Object.keys(imgs)) {
+        markerImages[key] = imgs[key] && imgs[key].startsWith('data:') ? '[LOCAL_IMAGE]' : imgs[key];
+      }
+      sanitizedPartial.siteImages = markerImages;
+    }
 
     pendingSyncRef.current = { ...pendingSyncRef.current, ...sanitizedPartial };
     if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
@@ -397,7 +409,22 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
               });
             }
             if (data.subtitles !== undefined) setSubtitles(data.subtitles);
-            if (data.siteImages !== undefined) setSiteImages(sanitizeSiteImages(data.siteImages));
+            if (data.siteImages !== undefined) {
+              // Cloud only ever stores placeholder markers for images (real image bytes stay
+              // local-only to avoid the 1MB document limit) — so merge in only real image
+              // values from the cloud and keep whatever's already loaded locally otherwise.
+              setSiteImages((prev) => {
+                const incoming = data.siteImages as Record<string, string>;
+                const merged: Record<string, string> = { ...prev };
+                for (const key of Object.keys(incoming)) {
+                  const val = incoming[key];
+                  if (val && val !== '[LOCAL_IMAGE]') {
+                    merged[key] = val;
+                  }
+                }
+                return sanitizeSiteImages(merged as Partial<SiteImages>);
+              });
+            }
             if (data.aboutContent !== undefined) setAboutContent(data.aboutContent);
           } else if (!hasSeededAppDataRef.current && !isFirestoreQuotaExceeded()) {
             hasSeededAppDataRef.current = true;
