@@ -6,8 +6,23 @@ import { LazyImage } from './LazyImage';
 import { ImageViewerModal } from './ImageViewerModal';
 import { SectionHeader } from './SectionHeader';
 
+const LORE_ICON_MAP: Record<string, React.ElementType> = {
+  Scroll,
+  Feather,
+  Sparkles,
+  Ghost,
+  Award,
+  MapPin,
+};
+
+const LORE_COLOR_THEMES = [
+  { bg: 'bg-red-950/80', border: 'border-red-500/30', text: 'text-amber-400' },
+  { bg: 'bg-amber-950/80', border: 'border-amber-500/30', text: 'text-amber-300' },
+  { bg: 'bg-rose-950/80', border: 'border-rose-500/30', text: 'text-rose-300' },
+];
+
 export const AboutSection: React.FC = () => {
-  const { siteImages, aboutContent } = useAppData();
+  const { siteImages, aboutContent, loreBoxes } = useAppData();
   const [isViewerOpen, setIsViewerOpen] = useState(false);
 
   const stats = [
@@ -106,50 +121,26 @@ export const AboutSection: React.FC = () => {
             transition={{ duration: 0.8 }}
             className="lg:col-span-7 flex flex-col gap-6"
           >
-            {/* Lore Box 1: The Director Duties */}
-            <div className="glass-card rounded-3xl p-6 border border-red-500/20 hover:border-amber-400/40 transition-colors">
-              <div className="flex items-start gap-4">
-                <div className="p-3 rounded-2xl bg-red-950/80 border border-red-500/30 text-amber-400">
-                  <Scroll className="w-6 h-6" />
+            {loreBoxes.map((box, index) => {
+              const Icon = LORE_ICON_MAP[box.iconName] || Sparkles;
+              const theme = LORE_COLOR_THEMES[index % LORE_COLOR_THEMES.length];
+              return (
+                <div
+                  key={box.id}
+                  className="glass-card rounded-3xl p-6 border border-red-500/20 hover:border-amber-400/40 transition-colors"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className={`p-3 rounded-2xl ${theme.bg} border ${theme.border} ${theme.text}`}>
+                      <Icon className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-display font-bold text-lg text-amber-200 mb-1">{box.title}</h4>
+                      <p className="text-rose-100/75 text-sm leading-relaxed">{box.description}</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-display font-bold text-lg text-amber-200 mb-1">Guardian of the Sacred Boundary</h4>
-                  <p className="text-rose-100/75 text-sm leading-relaxed">
-                    Wangsheng Funeral Parlor has served Liyue for generations. Tak carries out solemn rites for departed souls, ensuring they transition peacefully to the spirit realm without regrets. She views death not as something tragic, but as a peaceful return to nature.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Lore Box 2: The Famous Versectile Poet */}
-            <div className="glass-card rounded-3xl p-6 border border-red-500/20 hover:border-amber-400/40 transition-colors">
-              <div className="flex items-start gap-4">
-                <div className="p-3 rounded-2xl bg-amber-950/80 border border-amber-500/30 text-amber-300">
-                  <Feather className="w-6 h-6" />
-                </div>
-                <div>
-                  <h4 className="font-display font-bold text-lg text-amber-200 mb-1">The Versectile Poet of Liyue</h4>
-                  <p className="text-rose-100/75 text-sm leading-relaxed">
-                    Tak is widely celebrated for her eccentric poetry. Her verses spread like wildfire among Liyue children and merchants alike. Her most legendary composition is the "Hilichurl Song", a playful tune recited across Teyvat!
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Lore Box 3: The Playful Prankster */}
-            <div className="glass-card rounded-3xl p-6 border border-red-500/20 hover:border-amber-400/40 transition-colors">
-              <div className="flex items-start gap-4">
-                <div className="p-3 rounded-2xl bg-rose-950/80 border border-rose-500/30 text-rose-300">
-                  <Sparkles className="w-6 h-6" />
-                </div>
-                <div>
-                  <h4 className="font-display font-bold text-lg text-amber-200 mb-1">Spirited Prankster & Friend</h4>
-                  <p className="text-rose-100/75 text-sm leading-relaxed">
-                    Whether popping up behind Zhongli to give him unexpected homework, sharing poetry with Baizhu, or organizing poetry battles with Xiangling, Tak brings infectious warmth and laughter wherever she walks.
-                  </p>
-                </div>
-              </div>
-            </div>
+              );
+            })}
           </motion.div>
         </div>
       </div>

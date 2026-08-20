@@ -48,3 +48,10 @@ export interface SoundboardItem {
   emoji: string;
   color: string;
 }
+
+export interface LoreBox {
+  id: string;
+  title: string;
+  description: string;
+  iconName: string;
+}

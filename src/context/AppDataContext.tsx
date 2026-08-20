@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
-import { GalleryItem, FunFact, Quote, PersonalityTrait, GalleryCategory } from '../types';
+import { GalleryItem, FunFact, Quote, PersonalityTrait, GalleryCategory, LoreBox } from '../types';
 import { GALLERY_ITEMS, FUN_FACTS, QUOTES, IMAGES, PERSONALITY_TRAITS } from '../data';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db, isFirestoreQuotaExceeded, markFirestoreQuotaExceeded, isQuotaError } from '../lib/firebase';
@@ -74,6 +74,30 @@ export const DEFAULT_ABOUT_CONTENT: AboutContent = {
   brandSubtitle: 'Wangsheng Parlor',
 };
 
+export const DEFAULT_LORE_BOXES: LoreBox[] = [
+  {
+    id: 'lore_1',
+    title: 'Guardian of the Sacred Boundary',
+    description:
+      'Wangsheng Funeral Parlor has served Liyue for generations. Tak carries out solemn rites for departed souls, ensuring they transition peacefully to the spirit realm without regrets. She views death not as something tragic, but as a peaceful return to nature.',
+    iconName: 'Scroll',
+  },
+  {
+    id: 'lore_2',
+    title: 'The Versectile Poet of Liyue',
+    description:
+      'Tak is widely celebrated for her eccentric poetry. Her verses spread like wildfire among Liyue children and merchants alike. Her most legendary composition is the "Hilichurl Song", a playful tune recited across Teyvat!',
+    iconName: 'Feather',
+  },
+  {
+    id: 'lore_3',
+    title: 'Spirited Prankster & Friend',
+    description:
+      'Whether popping up behind Zhongli to give him unexpected homework, sharing poetry with Baizhu, or organizing poetry battles with Xiangling, Tak brings infectious warmth and laughter wherever she walks.',
+    iconName: 'Sparkles',
+  },
+];
+
 export const DEFAULT_SUBTITLES = [
   'Director of Wangsheng Funeral Parlor 👻',
   'Versectile Poet ✨',
@@ -98,10 +122,14 @@ interface AppDataContextType {
   subtitles: string[];
   siteImages: SiteImages;
   aboutContent: AboutContent;
+  loreBoxes: LoreBox[];
   updateSiteImage: (key: keyof SiteImages, url: string) => void;
   resetSiteImages: () => void;
   updateAboutContent: (newContent: Partial<AboutContent>) => void;
   resetAboutContent: () => void;
+  addLoreBox: (box: Omit<LoreBox, 'id'>) => void;
+  updateLoreBox: (id: string, box: Partial<LoreBox>) => void;
+  deleteLoreBox: (id: string) => void;
   addGalleryItem: (item: Omit<GalleryItem, 'id'>) => void;
   updateGalleryItem: (id: string, item: Partial<GalleryItem>) => void;
   deleteGalleryItem: (id: string) => void;
@@ -135,6 +163,7 @@ const STORAGE_KEYS = {
   SUBTITLES: 'hutao_app_subtitles_v2',
   SITE_IMAGES: 'hutao_app_site_images_v2',
   ABOUT_CONTENT: 'hutao_app_about_content_v2',
+  LORE_BOXES: 'hutao_app_lore_boxes_v1',
 };
 
 export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -162,6 +191,15 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       return saved ? JSON.parse(saved) : FUN_FACTS;
     } catch (e) {
       return FUN_FACTS;
+    }
+  });
+
+  const [loreBoxes, setLoreBoxes] = useState<LoreBox[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.LORE_BOXES);
+      return saved ? JSON.parse(saved) : DEFAULT_LORE_BOXES;
+    } catch (e) {
+      return DEFAULT_LORE_BOXES;
     }
   });
 
@@ -234,6 +272,14 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       console.warn('Failed to save fun facts to localStorage', e);
     }
   }, [funFacts]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.LORE_BOXES, JSON.stringify(loreBoxes));
+    } catch (e) {
+      console.warn('Failed to save lore boxes to localStorage', e);
+    }
+  }, [loreBoxes]);
 
   useEffect(() => {
     try {
@@ -394,6 +440,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
             if (data.galleryItems !== undefined) setGalleryItems(sanitizeGalleryItems(data.galleryItems));
             if (data.galleryCategories !== undefined) setGalleryCategories(data.galleryCategories);
             if (data.funFacts !== undefined) setFunFacts(data.funFacts);
+            if (data.loreBoxes !== undefined) setLoreBoxes(data.loreBoxes);
             if (data.quotes !== undefined) setQuotes(data.quotes);
             if (data.personalityTraits !== undefined) {
               setPersonalityTraits((prev) => {
@@ -432,16 +479,22 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
               ...t,
               audioUrl: t.audioUrl && t.audioUrl.startsWith('data:') ? '[FIREBASE_AUDIO]' : t.audioUrl,
             }));
+            const sanitizedSiteImages: Record<string, string> = {};
+            for (const key of Object.keys(siteImages)) {
+              const val = (siteImages as Record<string, string>)[key];
+              sanitizedSiteImages[key] = val && val.startsWith('data:') ? '[LOCAL_IMAGE]' : val;
+            }
             setDoc(
               docRef,
               {
                 galleryItems,
                 galleryCategories,
                 funFacts,
+                loreBoxes,
                 quotes,
                 personalityTraits: sanitizedTraits,
                 subtitles,
-                siteImages,
+                siteImages: sanitizedSiteImages,
                 aboutContent,
                 updatedAt: new Date().toISOString(),
               },
@@ -601,6 +654,35 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     });
   };
 
+  // Lore Boxes CRUD (About section story cards)
+  const addLoreBox = (newBox: Omit<LoreBox, 'id'>) => {
+    const box: LoreBox = {
+      ...newBox,
+      id: Date.now().toString(),
+    };
+    setLoreBoxes((prev) => {
+      const updated = [...prev, box];
+      syncPartialToFirestore({ loreBoxes: updated });
+      return updated;
+    });
+  };
+
+  const updateLoreBox = (id: string, updatedBox: Partial<LoreBox>) => {
+    setLoreBoxes((prev) => {
+      const updated = prev.map((item) => (item.id === id ? { ...item, ...updatedBox } : item));
+      syncPartialToFirestore({ loreBoxes: updated });
+      return updated;
+    });
+  };
+
+  const deleteLoreBox = (id: string) => {
+    setLoreBoxes((prev) => {
+      const updated = prev.filter((item) => item.id !== id);
+      syncPartialToFirestore({ loreBoxes: updated });
+      return updated;
+    });
+  };
+
   // Quotes CRUD
   const addQuote = (newQuote: Omit<Quote, 'id'>) => {
     const quote: Quote = {
@@ -712,6 +794,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     setGalleryItems(GALLERY_ITEMS);
     setGalleryCategories(DEFAULT_GALLERY_CATEGORIES);
     setFunFacts(FUN_FACTS);
+    setLoreBoxes(DEFAULT_LORE_BOXES);
     setQuotes(QUOTES);
     setPersonalityTraits(PERSONALITY_TRAITS);
     setSubtitles(DEFAULT_SUBTITLES);
@@ -720,6 +803,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     localStorage.removeItem(STORAGE_KEYS.GALLERY);
     localStorage.removeItem(STORAGE_KEYS.GALLERY_CATEGORIES);
     localStorage.removeItem(STORAGE_KEYS.FUN_FACTS);
+    localStorage.removeItem(STORAGE_KEYS.LORE_BOXES);
     localStorage.removeItem(STORAGE_KEYS.QUOTES);
     localStorage.removeItem(STORAGE_KEYS.PERSONALITY);
     localStorage.removeItem(STORAGE_KEYS.SUBTITLES);
@@ -729,6 +813,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       galleryItems: GALLERY_ITEMS,
       galleryCategories: DEFAULT_GALLERY_CATEGORIES,
       funFacts: FUN_FACTS,
+      loreBoxes: DEFAULT_LORE_BOXES,
       quotes: QUOTES,
       personalityTraits: PERSONALITY_TRAITS,
       subtitles: DEFAULT_SUBTITLES,
@@ -743,6 +828,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         galleryItems,
         galleryCategories,
         funFacts,
+        loreBoxes,
         quotes,
         personalityTraits,
         subtitles,
@@ -752,6 +838,9 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         resetSiteImages,
         updateAboutContent,
         resetAboutContent,
+        addLoreBox,
+        updateLoreBox,
+        deleteLoreBox,
         addGalleryItem,
         updateGalleryItem,
         deleteGalleryItem,

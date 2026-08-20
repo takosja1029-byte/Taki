@@ -34,9 +34,10 @@ import {
   ChevronDown,
   SkipBack,
   SkipForward,
+  Scroll,
 } from 'lucide-react';
 import { useAppData } from '../context/AppDataContext';
-import { GalleryItem, FunFact, Quote } from '../types';
+import { GalleryItem, FunFact, Quote, LoreBox } from '../types';
 import { compressImage } from '../utils/imageCompressor';
 import { ambientMusic, MusicTrack } from '../utils/ambientMusic';
 import { fetchPersonalityAudioFromCloud } from '../utils/personalityAudioStorage';
@@ -56,6 +57,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
     galleryItems,
     galleryCategories,
     funFacts,
+    loreBoxes,
     quotes,
     personalityTraits,
     subtitles,
@@ -65,6 +67,9 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
     resetSiteImages,
     updateAboutContent,
     resetAboutContent,
+    addLoreBox,
+    updateLoreBox,
+    deleteLoreBox,
     addGalleryItem,
     updateGalleryItem,
     deleteGalleryItem,
@@ -381,6 +386,13 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
     badge: 'Secret Lore',
   });
 
+  const [editingLoreBoxId, setEditingLoreBoxId] = useState<string | null>(null);
+  const [loreBoxForm, setLoreBoxForm] = useState({
+    title: '',
+    description: '',
+    iconName: 'Scroll',
+  });
+
   const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null);
   const [quoteForm, setQuoteForm] = useState({
     text: '',
@@ -580,6 +592,35 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
       iconName: fact.iconName || 'Sparkles',
       secretDetail: fact.secretDetail,
       badge: fact.badge,
+    });
+  };
+
+  // Save Lore Box (About section story cards)
+  const handleSaveLoreBox = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loreBoxForm.title || !loreBoxForm.description) {
+      alert('Please fill out the title and description!');
+      return;
+    }
+
+    if (editingLoreBoxId) {
+      updateLoreBox(editingLoreBoxId, loreBoxForm);
+      showToast('Lore box updated!');
+      setEditingLoreBoxId(null);
+    } else {
+      addLoreBox(loreBoxForm);
+      showToast('New lore box added!');
+    }
+
+    setLoreBoxForm({ title: '', description: '', iconName: 'Scroll' });
+  };
+
+  const handleEditLoreBox = (box: LoreBox) => {
+    setEditingLoreBoxId(box.id);
+    setLoreBoxForm({
+      title: box.title,
+      description: box.description,
+      iconName: box.iconName || 'Scroll',
     });
   };
 
@@ -1361,6 +1402,129 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
                           className="w-full px-3.5 py-2 rounded-xl bg-[#200b0e] border border-red-500/30 text-white text-sm focus:outline-none focus:border-amber-400 resize-none"
                         />
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Lore / Story Boxes (the 3 cards below the About text) */}
+                  <div className="pt-2 border-t border-red-500/20 space-y-4">
+                    <div className="flex items-center justify-between pt-4">
+                      <div>
+                        <h5 className="font-display font-bold text-base text-amber-200 flex items-center gap-2">
+                          <Scroll className="w-4 h-4 text-amber-400" />
+                          <span>Lore / Story Cards ({loreBoxes.length})</span>
+                        </h5>
+                        <p className="text-[11px] text-rose-200/60 mt-1">
+                          The story cards shown next to your photo in the About section.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="glass-card p-5 rounded-2xl border border-red-500/30">
+                      <h6 className="font-display font-bold text-sm text-amber-200 mb-3 flex items-center justify-between">
+                        <span>{editingLoreBoxId ? 'Edit Lore Card' : 'Add New Lore Card'}</span>
+                        {editingLoreBoxId && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingLoreBoxId(null);
+                              setLoreBoxForm({ title: '', description: '', iconName: 'Scroll' });
+                            }}
+                            className="text-xs text-rose-300 hover:underline cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                        )}
+                      </h6>
+
+                      <form onSubmit={handleSaveLoreBox} className="space-y-3">
+                        <div>
+                          <label className="block text-xs font-semibold text-rose-200/80 mb-1">Title</label>
+                          <input
+                            type="text"
+                            value={loreBoxForm.title}
+                            onChange={(e) => setLoreBoxForm({ ...loreBoxForm, title: e.target.value })}
+                            placeholder="e.g. Guardian of the Sacred Boundary"
+                            className="w-full px-3.5 py-2 rounded-xl bg-[#200b0e] border border-red-500/30 text-white text-xs focus:outline-none focus:border-amber-400"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-semibold text-rose-200/80 mb-1">Description</label>
+                          <textarea
+                            rows={3}
+                            value={loreBoxForm.description}
+                            onChange={(e) => setLoreBoxForm({ ...loreBoxForm, description: e.target.value })}
+                            placeholder="Story / lore text shown in the card..."
+                            className="w-full px-3.5 py-2 rounded-xl bg-[#200b0e] border border-red-500/30 text-white text-xs focus:outline-none focus:border-amber-400"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-semibold text-rose-200/80 mb-1">Icon</label>
+                          <select
+                            value={loreBoxForm.iconName}
+                            onChange={(e) => setLoreBoxForm({ ...loreBoxForm, iconName: e.target.value })}
+                            className="w-full px-3.5 py-2 rounded-xl bg-[#200b0e] border border-red-500/30 text-white text-xs focus:outline-none focus:border-amber-400"
+                          >
+                            <option value="Scroll">Scroll</option>
+                            <option value="Feather">Feather</option>
+                            <option value="Sparkles">Sparkles</option>
+                            <option value="Ghost">Ghost</option>
+                            <option value="Award">Award</option>
+                            <option value="MapPin">MapPin</option>
+                          </select>
+                        </div>
+
+                        <button
+                          type="submit"
+                          className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 text-white font-display text-xs font-bold shadow-md hover:scale-102 transition-transform cursor-pointer"
+                        >
+                          {editingLoreBoxId ? 'Update Card' : 'Add Card'}
+                        </button>
+                      </form>
+                    </div>
+
+                    <div className="space-y-3">
+                      {loreBoxes.map((box) => (
+                        <div
+                          key={box.id}
+                          className="p-4 rounded-2xl glass-card border border-red-500/20 flex items-center justify-between gap-3"
+                        >
+                          <div className="min-w-0">
+                            <h6 className="font-display font-bold text-sm text-white truncate">{box.title}</h6>
+                            <p className="text-xs text-rose-200/70 mt-1 line-clamp-2">{box.description}</p>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditLoreBox(box);
+                              }}
+                              className="p-2 rounded-lg bg-red-950 text-amber-300 hover:text-white cursor-pointer"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                requestDeleteConfirm('Delete Lore Card', box.title, () => {
+                                  deleteLoreBox(box.id);
+                                  if (editingLoreBoxId === box.id) {
+                                    setEditingLoreBoxId(null);
+                                  }
+                                  showToast(`Deleted lore card "${box.title}"!`);
+                                });
+                              }}
+                              className="p-2 rounded-lg bg-red-950 text-rose-300 hover:text-white cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
