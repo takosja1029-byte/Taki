@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
-import { GalleryItem, FunFact, Quote, PersonalityTrait, GalleryCategory, LoreBox } from '../types';
+import { GalleryItem, FunFact, Quote, PersonalityTrait, GalleryCategory, LoreBox, SectionHeaderContent } from '../types';
 import { GALLERY_ITEMS, FUN_FACTS, QUOTES, IMAGES, PERSONALITY_TRAITS } from '../data';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db, isFirestoreQuotaExceeded, markFirestoreQuotaExceeded, isQuotaError } from '../lib/firebase';
@@ -98,6 +98,40 @@ export const DEFAULT_LORE_BOXES: LoreBox[] = [
   },
 ];
 
+export type SectionHeaderKey = 'personality' | 'quotes' | 'funFacts' | 'gallery';
+
+export const DEFAULT_SECTION_HEADERS: Record<SectionHeaderKey, SectionHeaderContent> = {
+  personality: {
+    badge: 'Character Traits & Voice',
+    chineseSymbol: '魂',
+    titlePrefix: "Tak's",
+    titleHighlight: 'Personality',
+    subtitle: 'Click cards to reveal her inner voice, or press the voice button to listen to her custom voice lines!',
+  },
+  quotes: {
+    badge: 'Memorable Lines & Poems',
+    chineseSymbol: '诗',
+    titlePrefix: 'Famous',
+    titleHighlight: 'Tak Quotes',
+    subtitle: 'Reflections on life, death, poetry, and funeral parlor wisdom.',
+  },
+  funFacts: {
+    badge: 'Lore & Trivia Secrets',
+    chineseSymbol: '趣',
+    titlePrefix: 'Tak',
+    titleHighlight: 'Fun Facts',
+    subtitle: 'Click any card to flip it over and uncover secret lore, strange habits, and director trivia!',
+  },
+  gallery: {
+    badge: 'Illustrations & Wallpapers',
+    chineseSymbol: '画',
+    titlePrefix: 'Tak',
+    titleHighlight: 'Gallery',
+    subtitle:
+      'Explore high quality artwork, poetry moments, and glowing spirit illustrations. Click or touch any picture to view in full resolution.',
+  },
+};
+
 export const DEFAULT_SUBTITLES = [
   'Director of Wangsheng Funeral Parlor 👻',
   'Versectile Poet ✨',
@@ -123,6 +157,7 @@ interface AppDataContextType {
   siteImages: SiteImages;
   aboutContent: AboutContent;
   loreBoxes: LoreBox[];
+  sectionHeaders: Record<SectionHeaderKey, SectionHeaderContent>;
   updateSiteImage: (key: keyof SiteImages, url: string) => void;
   resetSiteImages: () => void;
   updateAboutContent: (newContent: Partial<AboutContent>) => void;
@@ -130,6 +165,7 @@ interface AppDataContextType {
   addLoreBox: (box: Omit<LoreBox, 'id'>) => void;
   updateLoreBox: (id: string, box: Partial<LoreBox>) => void;
   deleteLoreBox: (id: string) => void;
+  updateSectionHeader: (key: SectionHeaderKey, content: Partial<SectionHeaderContent>) => void;
   addGalleryItem: (item: Omit<GalleryItem, 'id'>) => void;
   updateGalleryItem: (id: string, item: Partial<GalleryItem>) => void;
   deleteGalleryItem: (id: string) => void;
@@ -164,6 +200,7 @@ const STORAGE_KEYS = {
   SITE_IMAGES: 'hutao_app_site_images_v2',
   ABOUT_CONTENT: 'hutao_app_about_content_v2',
   LORE_BOXES: 'hutao_app_lore_boxes_v1',
+  SECTION_HEADERS: 'hutao_app_section_headers_v1',
 };
 
 export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -200,6 +237,15 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       return saved ? JSON.parse(saved) : DEFAULT_LORE_BOXES;
     } catch (e) {
       return DEFAULT_LORE_BOXES;
+    }
+  });
+
+  const [sectionHeaders, setSectionHeaders] = useState<Record<SectionHeaderKey, SectionHeaderContent>>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.SECTION_HEADERS);
+      return saved ? { ...DEFAULT_SECTION_HEADERS, ...JSON.parse(saved) } : DEFAULT_SECTION_HEADERS;
+    } catch (e) {
+      return DEFAULT_SECTION_HEADERS;
     }
   });
 
@@ -280,6 +326,14 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       console.warn('Failed to save lore boxes to localStorage', e);
     }
   }, [loreBoxes]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.SECTION_HEADERS, JSON.stringify(sectionHeaders));
+    } catch (e) {
+      console.warn('Failed to save section headers to localStorage', e);
+    }
+  }, [sectionHeaders]);
 
   useEffect(() => {
     try {
@@ -441,6 +495,9 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
             if (data.galleryCategories !== undefined) setGalleryCategories(data.galleryCategories);
             if (data.funFacts !== undefined) setFunFacts(data.funFacts);
             if (data.loreBoxes !== undefined) setLoreBoxes(data.loreBoxes);
+            if (data.sectionHeaders !== undefined) {
+              setSectionHeaders((prev) => ({ ...prev, ...data.sectionHeaders }));
+            }
             if (data.quotes !== undefined) setQuotes(data.quotes);
             if (data.personalityTraits !== undefined) {
               setPersonalityTraits((prev) => {
@@ -491,6 +548,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
                 galleryCategories,
                 funFacts,
                 loreBoxes,
+                sectionHeaders,
                 quotes,
                 personalityTraits: sanitizedTraits,
                 subtitles,
@@ -683,6 +741,14 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     });
   };
 
+  const updateSectionHeader = (key: SectionHeaderKey, content: Partial<SectionHeaderContent>) => {
+    setSectionHeaders((prev) => {
+      const updated = { ...prev, [key]: { ...prev[key], ...content } };
+      syncPartialToFirestore({ sectionHeaders: updated });
+      return updated;
+    });
+  };
+
   // Quotes CRUD
   const addQuote = (newQuote: Omit<Quote, 'id'>) => {
     const quote: Quote = {
@@ -795,6 +861,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     setGalleryCategories(DEFAULT_GALLERY_CATEGORIES);
     setFunFacts(FUN_FACTS);
     setLoreBoxes(DEFAULT_LORE_BOXES);
+    setSectionHeaders(DEFAULT_SECTION_HEADERS);
     setQuotes(QUOTES);
     setPersonalityTraits(PERSONALITY_TRAITS);
     setSubtitles(DEFAULT_SUBTITLES);
@@ -804,6 +871,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     localStorage.removeItem(STORAGE_KEYS.GALLERY_CATEGORIES);
     localStorage.removeItem(STORAGE_KEYS.FUN_FACTS);
     localStorage.removeItem(STORAGE_KEYS.LORE_BOXES);
+    localStorage.removeItem(STORAGE_KEYS.SECTION_HEADERS);
     localStorage.removeItem(STORAGE_KEYS.QUOTES);
     localStorage.removeItem(STORAGE_KEYS.PERSONALITY);
     localStorage.removeItem(STORAGE_KEYS.SUBTITLES);
@@ -814,6 +882,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       galleryCategories: DEFAULT_GALLERY_CATEGORIES,
       funFacts: FUN_FACTS,
       loreBoxes: DEFAULT_LORE_BOXES,
+      sectionHeaders: DEFAULT_SECTION_HEADERS,
       quotes: QUOTES,
       personalityTraits: PERSONALITY_TRAITS,
       subtitles: DEFAULT_SUBTITLES,
@@ -829,6 +898,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         galleryCategories,
         funFacts,
         loreBoxes,
+        sectionHeaders,
         quotes,
         personalityTraits,
         subtitles,
@@ -841,6 +911,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         addLoreBox,
         updateLoreBox,
         deleteLoreBox,
+        updateSectionHeader,
         addGalleryItem,
         updateGalleryItem,
         deleteGalleryItem,

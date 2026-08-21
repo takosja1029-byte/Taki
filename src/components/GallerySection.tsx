@@ -21,7 +21,7 @@ import { LazyImage } from './LazyImage';
 import { SectionHeader } from './SectionHeader';
 
 export const GallerySection: React.FC = () => {
-  const { galleryItems, galleryCategories } = useAppData();
+  const { galleryItems, galleryCategories, sectionHeaders } = useAppData();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [activeLightboxItem, setActiveLightboxItem] = useState<GalleryItem | null>(null);
 
@@ -289,11 +289,11 @@ export const GallerySection: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <SectionHeader
-          badge="Illustrations & Wallpapers"
-          chineseSymbol="画"
-          titlePrefix="Tak"
-          titleHighlight="Gallery"
-          subtitle="Explore high quality artwork, poetry moments, and glowing spirit illustrations. Click or touch any picture to view in full resolution."
+          badge={sectionHeaders.gallery.badge}
+          chineseSymbol={sectionHeaders.gallery.chineseSymbol}
+          titlePrefix={sectionHeaders.gallery.titlePrefix}
+          titleHighlight={sectionHeaders.gallery.titleHighlight}
+          subtitle={sectionHeaders.gallery.subtitle}
         />
 
         {/* Filter Tabs */}

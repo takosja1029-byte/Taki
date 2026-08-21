@@ -5,7 +5,7 @@ import { useAppData } from '../context/AppDataContext';
 import { SectionHeader } from './SectionHeader';
 
 export const QuotesSection: React.FC = () => {
-  const { quotes } = useAppData();
+  const { quotes, sectionHeaders } = useAppData();
   const [currentIndex, setCurrentIndex] = useState(0);
 
   // Reset index if list changes
@@ -43,11 +43,11 @@ export const QuotesSection: React.FC = () => {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <SectionHeader
-          badge="Memorable Lines & Poems"
-          chineseSymbol="诗"
-          titlePrefix="Famous"
-          titleHighlight="Tak Quotes"
-          subtitle="Reflections on life, death, poetry, and funeral parlor wisdom."
+          badge={sectionHeaders.quotes.badge}
+          chineseSymbol={sectionHeaders.quotes.chineseSymbol}
+          titlePrefix={sectionHeaders.quotes.titlePrefix}
+          titleHighlight={sectionHeaders.quotes.titleHighlight}
+          subtitle={sectionHeaders.quotes.subtitle}
         />
 
         {/* Quote Carousel Card */}

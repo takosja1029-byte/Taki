@@ -37,7 +37,8 @@ import {
   Scroll,
 } from 'lucide-react';
 import { useAppData } from '../context/AppDataContext';
-import { GalleryItem, FunFact, Quote, LoreBox } from '../types';
+import type { SectionHeaderKey } from '../context/AppDataContext';
+import { GalleryItem, FunFact, Quote, LoreBox, SectionHeaderContent } from '../types';
 import { compressImage } from '../utils/imageCompressor';
 import { ambientMusic, MusicTrack } from '../utils/ambientMusic';
 import { fetchPersonalityAudioFromCloud } from '../utils/personalityAudioStorage';
@@ -52,12 +53,111 @@ interface AdminModalProps {
   onClose: () => void;
 }
 
+// Compact editor for a section's header text (badge, Chinese symbol, title, subtitle).
+// Reused across the Personality, Quotes, Fun Facts, and Gallery tabs.
+const SectionHeaderEditor: React.FC<{
+  label: string;
+  sectionKey: SectionHeaderKey;
+  headers: Record<SectionHeaderKey, SectionHeaderContent>;
+  onUpdate: (key: SectionHeaderKey, content: Partial<SectionHeaderContent>) => void;
+}> = ({ label, sectionKey, headers, onUpdate }) => {
+  const current = headers[sectionKey];
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState(current);
+
+  useEffect(() => {
+    setForm(current);
+  }, [current]);
+
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    onUpdate(sectionKey, form);
+    setOpen(false);
+  };
+
+  return (
+    <div className="glass-card p-5 rounded-2xl border border-red-500/30">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between cursor-pointer"
+      >
+        <h4 className="font-display font-bold text-amber-300 text-sm flex items-center gap-2">
+          <Type className="w-4 h-4 text-amber-400" />
+          <span>{label} Section Header</span>
+        </h4>
+        <ChevronDown className={`w-4 h-4 text-amber-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <form onSubmit={handleSave} className="space-y-3 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-rose-200/80 mb-1">Badge Text</label>
+              <input
+                type="text"
+                value={form.badge}
+                onChange={(e) => setForm({ ...form, badge: e.target.value })}
+                className="w-full px-3.5 py-2 rounded-xl bg-[#200b0e] border border-red-500/30 text-white text-xs focus:outline-none focus:border-amber-400"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-rose-200/80 mb-1">Chinese Symbol</label>
+              <input
+                type="text"
+                value={form.chineseSymbol}
+                onChange={(e) => setForm({ ...form, chineseSymbol: e.target.value })}
+                className="w-full px-3.5 py-2 rounded-xl bg-[#200b0e] border border-red-500/30 text-white text-xs focus:outline-none focus:border-amber-400"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-rose-200/80 mb-1">Title Prefix</label>
+              <input
+                type="text"
+                value={form.titlePrefix}
+                onChange={(e) => setForm({ ...form, titlePrefix: e.target.value })}
+                className="w-full px-3.5 py-2 rounded-xl bg-[#200b0e] border border-red-500/30 text-white text-xs focus:outline-none focus:border-amber-400"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-rose-200/80 mb-1">Title Highlight</label>
+              <input
+                type="text"
+                value={form.titleHighlight}
+                onChange={(e) => setForm({ ...form, titleHighlight: e.target.value })}
+                className="w-full px-3.5 py-2 rounded-xl bg-[#200b0e] border border-red-500/30 text-white text-xs focus:outline-none focus:border-amber-400"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-rose-200/80 mb-1">Subtitle</label>
+            <textarea
+              rows={2}
+              value={form.subtitle}
+              onChange={(e) => setForm({ ...form, subtitle: e.target.value })}
+              className="w-full px-3.5 py-2 rounded-xl bg-[#200b0e] border border-red-500/30 text-white text-xs focus:outline-none focus:border-amber-400"
+            />
+          </div>
+          <button
+            type="submit"
+            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 text-white font-display text-xs font-bold shadow-md hover:scale-102 transition-transform cursor-pointer"
+          >
+            Save Header
+          </button>
+        </form>
+      )}
+    </div>
+  );
+};
+
 export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
   const {
     galleryItems,
     galleryCategories,
     funFacts,
     loreBoxes,
+    sectionHeaders,
+    updateSectionHeader,
     quotes,
     personalityTraits,
     subtitles,
@@ -1533,6 +1633,12 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
               {/* TAB: PERSONALITY TRAITS */}
               {activeTab === 'personality' && (
                 <div className="space-y-6">
+                  <SectionHeaderEditor
+                    label="Personality"
+                    sectionKey="personality"
+                    headers={sectionHeaders}
+                    onUpdate={updateSectionHeader}
+                  />
                   {/* Form for Creating / Editing Personality Trait */}
                   <div className="glass-card p-6 rounded-2xl border border-red-500/30">
                     <div className="flex items-center justify-between mb-4">
@@ -2085,6 +2191,12 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
               {/* TAB 1: GALLERY & UPLOADS */}
               {activeTab === 'gallery' && (
                 <div className="space-y-6">
+                  <SectionHeaderEditor
+                    label="Gallery"
+                    sectionKey="gallery"
+                    headers={sectionHeaders}
+                    onUpdate={updateSectionHeader}
+                  />
                   {/* Gallery Categories Manager */}
                   <div className="glass-card p-5 rounded-2xl border-2 border-amber-500/30 bg-gradient-to-r from-red-950/30 via-amber-950/20 to-red-950/30 space-y-4">
                     <div className="flex items-center justify-between flex-wrap gap-2">
@@ -2455,6 +2567,12 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
               {/* TAB 2: FUN FACTS */}
               {activeTab === 'facts' && (
                 <div className="space-y-6">
+                  <SectionHeaderEditor
+                    label="Fun Facts"
+                    sectionKey="funFacts"
+                    headers={sectionHeaders}
+                    onUpdate={updateSectionHeader}
+                  />
                   {/* Form */}
                   <div className="glass-card p-6 rounded-2xl border border-red-500/30">
                     <h4 className="font-display font-bold text-lg text-amber-200 mb-4 flex items-center justify-between">
@@ -2580,6 +2698,12 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
               {/* TAB 3: QUOTES */}
               {activeTab === 'quotes' && (
                 <div className="space-y-6">
+                  <SectionHeaderEditor
+                    label="Quotes"
+                    sectionKey="quotes"
+                    headers={sectionHeaders}
+                    onUpdate={updateSectionHeader}
+                  />
                   {/* Form */}
                   <div className="glass-card p-6 rounded-2xl border border-red-500/30">
                     <h4 className="font-display font-bold text-lg text-amber-200 mb-4 flex items-center justify-between">

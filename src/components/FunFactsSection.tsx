@@ -5,7 +5,7 @@ import { useAppData } from '../context/AppDataContext';
 import { SectionHeader } from './SectionHeader';
 
 export const FunFactsSection: React.FC = () => {
-  const { funFacts } = useAppData();
+  const { funFacts, sectionHeaders } = useAppData();
   const [flippedCards, setFlippedCards] = useState<Record<string, boolean>>({});
 
   const iconMap: Record<string, React.ElementType> = {
@@ -30,11 +30,11 @@ export const FunFactsSection: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <SectionHeader
-          badge="Lore & Trivia Secrets"
-          chineseSymbol="趣"
-          titlePrefix="Tak"
-          titleHighlight="Fun Facts"
-          subtitle="Click any card to flip it over and uncover secret lore, strange habits, and director trivia!"
+          badge={sectionHeaders.funFacts.badge}
+          chineseSymbol={sectionHeaders.funFacts.chineseSymbol}
+          titlePrefix={sectionHeaders.funFacts.titlePrefix}
+          titleHighlight={sectionHeaders.funFacts.titleHighlight}
+          subtitle={sectionHeaders.funFacts.subtitle}
         />
 
         {/* 6 Flip Cards Grid */}

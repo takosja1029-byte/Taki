@@ -28,7 +28,7 @@ import { SectionHeader } from './SectionHeader';
 import { fetchPersonalityAudioFromCloud } from '../utils/personalityAudioStorage';
 
 export const PersonalitySection: React.FC = () => {
-  const { personalityTraits } = useAppData();
+  const { personalityTraits, sectionHeaders } = useAppData();
   const [flippedCards, setFlippedCards] = useState<Record<string, boolean>>({});
   const [playingTraitId, setPlayingTraitId] = useState<string | null>(null);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -184,11 +184,11 @@ export const PersonalitySection: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <SectionHeader
-          badge="Character Traits & Voice"
-          chineseSymbol="魂"
-          titlePrefix="Tak's"
-          titleHighlight="Personality"
-          subtitle="Click cards to reveal her inner voice, or press the voice button to listen to her custom voice lines!"
+          badge={sectionHeaders.personality.badge}
+          chineseSymbol={sectionHeaders.personality.chineseSymbol}
+          titlePrefix={sectionHeaders.personality.titlePrefix}
+          titleHighlight={sectionHeaders.personality.titleHighlight}
+          subtitle={sectionHeaders.personality.subtitle}
         />
 
         {/* 4 Flip Cards Grid */}

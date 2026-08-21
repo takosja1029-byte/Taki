@@ -55,3 +55,11 @@ export interface LoreBox {
   description: string;
   iconName: string;
 }
+
+export interface SectionHeaderContent {
+  badge: string;
+  chineseSymbol: string;
+  titlePrefix: string;
+  titleHighlight: string;
+  subtitle: string;
+}
