@@ -40,6 +40,7 @@ import { useAppData } from '../context/AppDataContext';
 import type { SectionHeaderKey } from '../context/AppDataContext';
 import { GalleryItem, FunFact, Quote, LoreBox, SectionHeaderContent, HeroContent } from '../types';
 import { compressImage } from '../utils/imageCompressor';
+import { uploadToCloudinary } from '../utils/cloudinaryUpload';
 import { ambientMusic, MusicTrack } from '../utils/ambientMusic';
 import { fetchPersonalityAudioFromCloud } from '../utils/personalityAudioStorage';
 import { ImageCropperModal } from './ImageCropperModal';
@@ -378,23 +379,31 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
     });
   };
 
-  const handleCropComplete = (croppedDataUrl: string) => {
+  const handleCropComplete = async (croppedDataUrl: string) => {
     const key = cropperModal.targetKey;
-    if (key === 'site-hero') {
-      updateSiteImage('hero', croppedDataUrl);
-      showToast('Hero image cropped & saved!');
-    } else if (key === 'site-ghostCompanion') {
-      updateSiteImage('ghostCompanion', croppedDataUrl);
-      showToast('Ghost companion cropped & saved!');
-    } else if (key === 'site-aboutAvatar') {
-      updateSiteImage('aboutAvatar', croppedDataUrl);
-      showToast('About section portrait cropped & saved!');
-    } else if (key === 'gallery-new' || key === 'gallery-edit') {
-      setGalleryForm((prev) => ({ ...prev, imageUrl: croppedDataUrl }));
-      showToast('Gallery image cropped!');
-    } else if (key === 'personality-icon') {
-      setPersonalityForm((prev) => ({ ...prev, customIconUrl: croppedDataUrl }));
-      showToast('Personality icon cropped!');
+    try {
+      showToast('Uploading to Cloudinary...');
+      const cloudUrl = await uploadToCloudinary(croppedDataUrl);
+
+      if (key === 'site-hero') {
+        updateSiteImage('hero', cloudUrl);
+        showToast('Hero image cropped & saved!');
+      } else if (key === 'site-ghostCompanion') {
+        updateSiteImage('ghostCompanion', cloudUrl);
+        showToast('Ghost companion cropped & saved!');
+      } else if (key === 'site-aboutAvatar') {
+        updateSiteImage('aboutAvatar', cloudUrl);
+        showToast('About section portrait cropped & saved!');
+      } else if (key === 'gallery-new' || key === 'gallery-edit') {
+        setGalleryForm((prev) => ({ ...prev, imageUrl: cloudUrl }));
+        showToast('Gallery image cropped!');
+      } else if (key === 'personality-icon') {
+        setPersonalityForm((prev) => ({ ...prev, customIconUrl: cloudUrl }));
+        showToast('Personality icon cropped!');
+      }
+    } catch (err) {
+      console.error('Crop upload error:', err);
+      alert('Failed to upload cropped image.');
     }
   };
 
@@ -647,14 +656,16 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
       try {
         showToast('Compressing image...');
         const compressedUrl = await compressImage(file, 1600, 1600, 0.82);
+        showToast('Uploading to Cloudinary...');
+        const cloudUrl = await uploadToCloudinary(compressedUrl);
         setGalleryForm((prev) => ({
           ...prev,
-          imageUrl: compressedUrl,
+          imageUrl: cloudUrl,
         }));
-        showToast('Image compressed & uploaded!');
+        showToast('Image uploaded!');
       } catch (err) {
-        console.error('Compression error:', err);
-        alert('Failed to compress image.');
+        console.error('Upload error:', err);
+        alert('Failed to upload image.');
       }
     }
   };
@@ -669,11 +680,13 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
       try {
         showToast('Compressing site image...');
         const compressedUrl = await compressImage(file, 1200, 1200, 0.82);
-        updateSiteImage(key, compressedUrl);
-        showToast('Site image compressed & updated!');
+        showToast('Uploading to Cloudinary...');
+        const cloudUrl = await uploadToCloudinary(compressedUrl);
+        updateSiteImage(key, cloudUrl);
+        showToast('Site image uploaded!');
       } catch (err) {
-        console.error('Site image compression error:', err);
-        alert('Failed to compress site image.');
+        console.error('Site image upload error:', err);
+        alert('Failed to upload site image.');
       }
     }
   };
@@ -688,11 +701,13 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
       try {
         showToast('Compressing gallery image...');
         const compressedUrl = await compressImage(file, 1600, 1600, 0.82);
-        updateGalleryItem(id, { imageUrl: compressedUrl });
-        showToast('Gallery image compressed & updated!');
+        showToast('Uploading to Cloudinary...');
+        const cloudUrl = await uploadToCloudinary(compressedUrl);
+        updateGalleryItem(id, { imageUrl: cloudUrl });
+        showToast('Gallery image uploaded!');
       } catch (err) {
-        console.error('Gallery image compression error:', err);
-        alert('Failed to compress gallery image.');
+        console.error('Gallery image upload error:', err);
+        alert('Failed to upload gallery image.');
       }
     }
   };
@@ -706,11 +721,12 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
     }
 
     let finalImageUrl = galleryForm.imageUrl;
-    if (finalImageUrl.startsWith('data:image/') && !finalImageUrl.includes('image/webp')) {
+    if (finalImageUrl.startsWith('data:image/')) {
       try {
-        finalImageUrl = await compressImage(finalImageUrl, 1600, 1600, 0.82);
+        const compressed = await compressImage(finalImageUrl, 1600, 1600, 0.82);
+        finalImageUrl = await uploadToCloudinary(compressed);
       } catch (err) {
-        console.warn('Image compression fallback:', err);
+        console.warn('Image upload fallback failed, saving as-is:', err);
       }
     }
 
