@@ -7,7 +7,7 @@ import { LazyImage } from './LazyImage';
 import { ImageViewerModal } from './ImageViewerModal';
 
 export const HeroSection: React.FC = () => {
-  const { subtitles: contextSubtitles, siteImages } = useAppData();
+  const { subtitles: contextSubtitles, siteImages, heroContent } = useAppData();
   const subtitles = contextSubtitles && contextSubtitles.length > 0
     ? contextSubtitles
     : ['Director of Wangsheng Funeral Parlor 👻'];
@@ -130,7 +130,7 @@ export const HeroSection: React.FC = () => {
           className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-red-950/80 via-amber-950/80 to-red-950/80 border border-red-500/40 text-amber-300 text-xs font-semibold shadow-[0_0_20px_rgba(230,57,70,0.3)] mb-6"
         >
           <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-spin" />
-          <span>Wangsheng Funeral Parlor</span>
+          <span>{heroContent.badge}</span>
           <Flame className="w-3.5 h-3.5 text-red-400" />
         </motion.div>
 
@@ -141,11 +141,11 @@ export const HeroSection: React.FC = () => {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="font-display text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white mb-4"
         >
-          Welcome to{' '}
+          {heroContent.titlePrefix}{' '}
           <span className="bg-gradient-to-r from-red-500 via-amber-400 to-amber-200 bg-clip-text text-transparent text-glow">
-            Tak&apos;s
+            {heroContent.titleHighlight}
           </span>{' '}
-          World
+          {heroContent.titleSuffix}
         </motion.h1>
 
         {/* Subtitle with Typewriter Effect */}

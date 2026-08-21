@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
-import { GalleryItem, FunFact, Quote, PersonalityTrait, GalleryCategory, LoreBox, SectionHeaderContent } from '../types';
+import { GalleryItem, FunFact, Quote, PersonalityTrait, GalleryCategory, LoreBox, SectionHeaderContent, HeroContent } from '../types';
 import { GALLERY_ITEMS, FUN_FACTS, QUOTES, IMAGES, PERSONALITY_TRAITS } from '../data';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db, isFirestoreQuotaExceeded, markFirestoreQuotaExceeded, isQuotaError } from '../lib/firebase';
@@ -100,6 +100,13 @@ export const DEFAULT_LORE_BOXES: LoreBox[] = [
 
 export type SectionHeaderKey = 'personality' | 'quotes' | 'funFacts' | 'gallery';
 
+export const DEFAULT_HERO_CONTENT: HeroContent = {
+  badge: 'Wangsheng Funeral Parlor',
+  titlePrefix: 'Welcome to',
+  titleHighlight: "Tak's",
+  titleSuffix: 'World',
+};
+
 export const DEFAULT_SECTION_HEADERS: Record<SectionHeaderKey, SectionHeaderContent> = {
   personality: {
     badge: 'Character Traits & Voice',
@@ -158,6 +165,8 @@ interface AppDataContextType {
   aboutContent: AboutContent;
   loreBoxes: LoreBox[];
   sectionHeaders: Record<SectionHeaderKey, SectionHeaderContent>;
+  heroContent: HeroContent;
+  updateHeroContent: (content: Partial<HeroContent>) => void;
   updateSiteImage: (key: keyof SiteImages, url: string) => void;
   resetSiteImages: () => void;
   updateAboutContent: (newContent: Partial<AboutContent>) => void;
@@ -201,6 +210,7 @@ const STORAGE_KEYS = {
   ABOUT_CONTENT: 'hutao_app_about_content_v2',
   LORE_BOXES: 'hutao_app_lore_boxes_v1',
   SECTION_HEADERS: 'hutao_app_section_headers_v1',
+  HERO_CONTENT: 'hutao_app_hero_content_v1',
 };
 
 export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -246,6 +256,15 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       return saved ? { ...DEFAULT_SECTION_HEADERS, ...JSON.parse(saved) } : DEFAULT_SECTION_HEADERS;
     } catch (e) {
       return DEFAULT_SECTION_HEADERS;
+    }
+  });
+
+  const [heroContent, setHeroContent] = useState<HeroContent>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.HERO_CONTENT);
+      return saved ? { ...DEFAULT_HERO_CONTENT, ...JSON.parse(saved) } : DEFAULT_HERO_CONTENT;
+    } catch (e) {
+      return DEFAULT_HERO_CONTENT;
     }
   });
 
@@ -334,6 +353,14 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       console.warn('Failed to save section headers to localStorage', e);
     }
   }, [sectionHeaders]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.HERO_CONTENT, JSON.stringify(heroContent));
+    } catch (e) {
+      console.warn('Failed to save hero content to localStorage', e);
+    }
+  }, [heroContent]);
 
   useEffect(() => {
     try {
@@ -498,6 +525,9 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
             if (data.sectionHeaders !== undefined) {
               setSectionHeaders((prev) => ({ ...prev, ...data.sectionHeaders }));
             }
+            if (data.heroContent !== undefined) {
+              setHeroContent((prev) => ({ ...prev, ...data.heroContent }));
+            }
             if (data.quotes !== undefined) setQuotes(data.quotes);
             if (data.personalityTraits !== undefined) {
               setPersonalityTraits((prev) => {
@@ -549,6 +579,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
                 funFacts,
                 loreBoxes,
                 sectionHeaders,
+                heroContent,
                 quotes,
                 personalityTraits: sanitizedTraits,
                 subtitles,
@@ -749,6 +780,14 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     });
   };
 
+  const updateHeroContent = (content: Partial<HeroContent>) => {
+    setHeroContent((prev) => {
+      const updated = { ...prev, ...content };
+      syncPartialToFirestore({ heroContent: updated });
+      return updated;
+    });
+  };
+
   // Quotes CRUD
   const addQuote = (newQuote: Omit<Quote, 'id'>) => {
     const quote: Quote = {
@@ -862,6 +901,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     setFunFacts(FUN_FACTS);
     setLoreBoxes(DEFAULT_LORE_BOXES);
     setSectionHeaders(DEFAULT_SECTION_HEADERS);
+    setHeroContent(DEFAULT_HERO_CONTENT);
     setQuotes(QUOTES);
     setPersonalityTraits(PERSONALITY_TRAITS);
     setSubtitles(DEFAULT_SUBTITLES);
@@ -872,6 +912,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     localStorage.removeItem(STORAGE_KEYS.FUN_FACTS);
     localStorage.removeItem(STORAGE_KEYS.LORE_BOXES);
     localStorage.removeItem(STORAGE_KEYS.SECTION_HEADERS);
+    localStorage.removeItem(STORAGE_KEYS.HERO_CONTENT);
     localStorage.removeItem(STORAGE_KEYS.QUOTES);
     localStorage.removeItem(STORAGE_KEYS.PERSONALITY);
     localStorage.removeItem(STORAGE_KEYS.SUBTITLES);
@@ -883,6 +924,7 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
       funFacts: FUN_FACTS,
       loreBoxes: DEFAULT_LORE_BOXES,
       sectionHeaders: DEFAULT_SECTION_HEADERS,
+      heroContent: DEFAULT_HERO_CONTENT,
       quotes: QUOTES,
       personalityTraits: PERSONALITY_TRAITS,
       subtitles: DEFAULT_SUBTITLES,
@@ -899,6 +941,8 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         funFacts,
         loreBoxes,
         sectionHeaders,
+        heroContent,
+        updateHeroContent,
         quotes,
         personalityTraits,
         subtitles,

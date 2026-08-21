@@ -38,7 +38,7 @@ import {
 } from 'lucide-react';
 import { useAppData } from '../context/AppDataContext';
 import type { SectionHeaderKey } from '../context/AppDataContext';
-import { GalleryItem, FunFact, Quote, LoreBox, SectionHeaderContent } from '../types';
+import { GalleryItem, FunFact, Quote, LoreBox, SectionHeaderContent, HeroContent } from '../types';
 import { compressImage } from '../utils/imageCompressor';
 import { ambientMusic, MusicTrack } from '../utils/ambientMusic';
 import { fetchPersonalityAudioFromCloud } from '../utils/personalityAudioStorage';
@@ -150,6 +150,95 @@ const SectionHeaderEditor: React.FC<{
   );
 };
 
+// Editor for the Hero section's badge text and main "Welcome to X World" title.
+const HeroContentEditor: React.FC<{
+  heroContent: HeroContent;
+  onUpdate: (content: Partial<HeroContent>) => void;
+}> = ({ heroContent, onUpdate }) => {
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState(heroContent);
+
+  useEffect(() => {
+    setForm(heroContent);
+  }, [heroContent]);
+
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    onUpdate(form);
+    setOpen(false);
+  };
+
+  return (
+    <div className="glass-card p-5 rounded-2xl border border-red-500/30">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between cursor-pointer"
+      >
+        <h4 className="font-display font-bold text-amber-300 text-sm flex items-center gap-2">
+          <Type className="w-4 h-4 text-amber-400" />
+          <span>Hero Badge & Main Title</span>
+        </h4>
+        <ChevronDown className={`w-4 h-4 text-amber-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <form onSubmit={handleSave} className="space-y-3 mt-4">
+          <div>
+            <label className="block text-xs font-semibold text-rose-200/80 mb-1">
+              Top Badge Text (e.g. "Wangsheng Funeral Parlor")
+            </label>
+            <input
+              type="text"
+              value={form.badge}
+              onChange={(e) => setForm({ ...form, badge: e.target.value })}
+              className="w-full px-3.5 py-2 rounded-xl bg-[#200b0e] border border-red-500/30 text-white text-xs focus:outline-none focus:border-amber-400"
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-rose-200/80 mb-1">Title Prefix</label>
+              <input
+                type="text"
+                value={form.titlePrefix}
+                onChange={(e) => setForm({ ...form, titlePrefix: e.target.value })}
+                className="w-full px-3.5 py-2 rounded-xl bg-[#200b0e] border border-red-500/30 text-white text-xs focus:outline-none focus:border-amber-400"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-rose-200/80 mb-1">Title Highlight</label>
+              <input
+                type="text"
+                value={form.titleHighlight}
+                onChange={(e) => setForm({ ...form, titleHighlight: e.target.value })}
+                className="w-full px-3.5 py-2 rounded-xl bg-[#200b0e] border border-red-500/30 text-white text-xs focus:outline-none focus:border-amber-400"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-rose-200/80 mb-1">Title Suffix</label>
+              <input
+                type="text"
+                value={form.titleSuffix}
+                onChange={(e) => setForm({ ...form, titleSuffix: e.target.value })}
+                className="w-full px-3.5 py-2 rounded-xl bg-[#200b0e] border border-red-500/30 text-white text-xs focus:outline-none focus:border-amber-400"
+              />
+            </div>
+          </div>
+          <p className="text-[11px] text-rose-200/50">
+            Preview: {form.titlePrefix} <span className="text-amber-300">{form.titleHighlight}</span> {form.titleSuffix}
+          </p>
+          <button
+            type="submit"
+            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 text-white font-display text-xs font-bold shadow-md hover:scale-102 transition-transform cursor-pointer"
+          >
+            Save Hero Header
+          </button>
+        </form>
+      )}
+    </div>
+  );
+};
+
 export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
   const {
     galleryItems,
@@ -158,6 +247,8 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
     loreBoxes,
     sectionHeaders,
     updateSectionHeader,
+    heroContent,
+    updateHeroContent,
     quotes,
     personalityTraits,
     subtitles,
@@ -2053,6 +2144,9 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
               {/* TAB 1: HERO TITLES / SUBTITLES */}
               {activeTab === 'subtitles' && (
                 <div className="space-y-6">
+                  {/* Hero badge + main title editor */}
+                  <HeroContentEditor heroContent={heroContent} onUpdate={updateHeroContent} />
+
                   {/* Form */}
                   <div className="glass-card p-6 rounded-2xl border border-red-500/30">
                     <h4 className="font-display font-bold text-lg text-amber-200 mb-2 flex items-center justify-between">
