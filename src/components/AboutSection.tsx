@@ -26,8 +26,8 @@ export const AboutSection: React.FC = () => {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
 
   const stats = [
-    { label: 'Title', value: 'Director', icon: Award, color: 'text-amber-400' },
-    { label: 'Affiliation', value: 'Wangsheng Funeral Parlor', icon: MapPin, color: 'text-rose-400' },
+    { label: 'Title', value: aboutContent?.statTitle || 'Director', icon: Award, color: 'text-amber-400' },
+    { label: 'Affiliation', value: aboutContent?.statAffiliation || 'Wangsheng Funeral Parlor', icon: MapPin, color: 'text-rose-400' },
   ];
 
   return (
