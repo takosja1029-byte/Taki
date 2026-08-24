@@ -60,6 +60,8 @@ export interface AboutContent {
   characterBio: string;
   brandTitle: string;
   brandSubtitle: string;
+  statTitle: string;
+  statAffiliation: string;
 }
 
 export const DEFAULT_ABOUT_CONTENT: AboutContent = {
@@ -72,6 +74,8 @@ export const DEFAULT_ABOUT_CONTENT: AboutContent = {
   characterBio: 'Tak took over the Wangsheng Funeral Parlor at a young age. Despite her playful prankster persona, she manages the parlor with utmost gravity when ritual dictates. To her, life and death are natural cycles, and she guards the border between them with sacred reverence.',
   brandTitle: 'Tak',
   brandSubtitle: 'Wangsheng Parlor',
+  statTitle: 'Director',
+  statAffiliation: 'Wangsheng Funeral Parlor',
 };
 
 export const DEFAULT_LORE_BOXES: LoreBox[] = [
