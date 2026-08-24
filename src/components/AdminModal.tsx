@@ -1610,6 +1610,38 @@ export const AdminModal: React.FC<AdminModalProps> = ({ isOpen, onClose }) => {
                         />
                       </div>
                     </div>
+
+                    {/* Title / Affiliation stat badges shown next to the photo */}
+                    <div className="glass-card p-5 rounded-2xl border border-red-500/30 space-y-3 md:col-span-2">
+                      <h5 className="font-display font-bold text-sm text-amber-300">
+                        Title & Affiliation Badges
+                      </h5>
+                      <p className="text-[11px] text-rose-200/60 -mt-2">
+                        The two small stat badges shown next to your photo (e.g. "Title: Director").
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-[11px] font-semibold text-rose-200/70 block mb-1">Title</label>
+                          <input
+                            type="text"
+                            value={aboutContent.statTitle}
+                            onChange={(e) => updateAboutContent({ statTitle: e.target.value })}
+                            placeholder="e.g. Director"
+                            className="w-full px-3.5 py-2 rounded-xl bg-[#200b0e] border border-red-500/30 text-white text-sm focus:outline-none focus:border-amber-400"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-semibold text-rose-200/70 block mb-1">Affiliation</label>
+                          <input
+                            type="text"
+                            value={aboutContent.statAffiliation}
+                            onChange={(e) => updateAboutContent({ statAffiliation: e.target.value })}
+                            placeholder="e.g. Wangsheng Funeral Parlor"
+                            className="w-full px-3.5 py-2 rounded-xl bg-[#200b0e] border border-red-500/30 text-white text-sm focus:outline-none focus:border-amber-400"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Lore / Story Boxes (the 3 cards below the About text) */}
