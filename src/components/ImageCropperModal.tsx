@@ -400,6 +400,9 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
     };
   };
 
+  const rafIdRef = useRef<number | null>(null);
+  const pendingCropBoxRef = useRef<CropBox | null>(null);
+
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
       if (!dragMode) return;
@@ -543,12 +546,24 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
         }
       }
 
-      setCropBox({
+      // Throttle to one state update per animation frame — raw pointermove/touchmove
+      // events can fire far more often than the screen can repaint (especially on
+      // mobile), and updating React state on every single one causes visible jank.
+      pendingCropBoxRef.current = {
         x: Math.max(imgRect.x, newX),
         y: Math.max(imgRect.y, newY),
         width: Math.max(MIN_SIZE, newW),
         height: Math.max(MIN_SIZE, newH),
-      });
+      };
+
+      if (rafIdRef.current === null) {
+        rafIdRef.current = requestAnimationFrame(() => {
+          if (pendingCropBoxRef.current) {
+            setCropBox(pendingCropBoxRef.current);
+          }
+          rafIdRef.current = null;
+        });
+      }
     },
     [dragMode, imgRect, rotation, naturalSize, aspect, getAspectNumeric]
   );
@@ -814,42 +829,42 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
                       {/* Top-Left Handle */}
                       <div
                         onPointerDown={(e) => handlePointerDown(e, 'nw')}
-                        className="absolute -top-2.5 -left-2.5 w-5 h-5 bg-amber-400 border-2 border-black rounded-full shadow-lg cursor-nwse-resize z-30 flex items-center justify-center hover:scale-125 transition-transform"
+                        className="absolute -top-2.5 -left-2.5 w-5 h-5 bg-amber-400 border-2 border-black rounded-full shadow-lg cursor-nwse-resize z-30 flex items-center justify-center hover:scale-125 transition-transform touch-none"
                       />
                       {/* Top-Center Handle */}
                       <div
                         onPointerDown={(e) => handlePointerDown(e, 'n')}
-                        className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-2.5 bg-amber-400 border border-black rounded-full shadow-lg cursor-ns-resize z-30 hover:scale-110 transition-transform"
+                        className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-2.5 bg-amber-400 border border-black rounded-full shadow-lg cursor-ns-resize z-30 hover:scale-110 transition-transform touch-none"
                       />
                       {/* Top-Right Handle */}
                       <div
                         onPointerDown={(e) => handlePointerDown(e, 'ne')}
-                        className="absolute -top-2.5 -right-2.5 w-5 h-5 bg-amber-400 border-2 border-black rounded-full shadow-lg cursor-nesw-resize z-30 flex items-center justify-center hover:scale-125 transition-transform"
+                        className="absolute -top-2.5 -right-2.5 w-5 h-5 bg-amber-400 border-2 border-black rounded-full shadow-lg cursor-nesw-resize z-30 flex items-center justify-center hover:scale-125 transition-transform touch-none"
                       />
                       {/* Right-Center Handle */}
                       <div
                         onPointerDown={(e) => handlePointerDown(e, 'e')}
-                        className="absolute top-1/2 -right-2 -translate-y-1/2 w-2.5 h-8 bg-amber-400 border border-black rounded-full shadow-lg cursor-ew-resize z-30 hover:scale-110 transition-transform"
+                        className="absolute top-1/2 -right-2 -translate-y-1/2 w-2.5 h-8 bg-amber-400 border border-black rounded-full shadow-lg cursor-ew-resize z-30 hover:scale-110 transition-transform touch-none"
                       />
                       {/* Bottom-Right Handle */}
                       <div
                         onPointerDown={(e) => handlePointerDown(e, 'se')}
-                        className="absolute -bottom-2.5 -right-2.5 w-5 h-5 bg-amber-400 border-2 border-black rounded-full shadow-lg cursor-nwse-resize z-30 flex items-center justify-center hover:scale-125 transition-transform"
+                        className="absolute -bottom-2.5 -right-2.5 w-5 h-5 bg-amber-400 border-2 border-black rounded-full shadow-lg cursor-nwse-resize z-30 flex items-center justify-center hover:scale-125 transition-transform touch-none"
                       />
                       {/* Bottom-Center Handle */}
                       <div
                         onPointerDown={(e) => handlePointerDown(e, 's')}
-                        className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-8 h-2.5 bg-amber-400 border border-black rounded-full shadow-lg cursor-ns-resize z-30 hover:scale-110 transition-transform"
+                        className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-8 h-2.5 bg-amber-400 border border-black rounded-full shadow-lg cursor-ns-resize z-30 hover:scale-110 transition-transform touch-none"
                       />
                       {/* Bottom-Left Handle */}
                       <div
                         onPointerDown={(e) => handlePointerDown(e, 'sw')}
-                        className="absolute -bottom-2.5 -left-2.5 w-5 h-5 bg-amber-400 border-2 border-black rounded-full shadow-lg cursor-nesw-resize z-30 flex items-center justify-center hover:scale-125 transition-transform"
+                        className="absolute -bottom-2.5 -left-2.5 w-5 h-5 bg-amber-400 border-2 border-black rounded-full shadow-lg cursor-nesw-resize z-30 flex items-center justify-center hover:scale-125 transition-transform touch-none"
                       />
                       {/* Left-Center Handle */}
                       <div
                         onPointerDown={(e) => handlePointerDown(e, 'w')}
-                        className="absolute top-1/2 -left-2 -translate-y-1/2 w-2.5 h-8 bg-amber-400 border border-black rounded-full shadow-lg cursor-ew-resize z-30 hover:scale-110 transition-transform"
+                        className="absolute top-1/2 -left-2 -translate-y-1/2 w-2.5 h-8 bg-amber-400 border border-black rounded-full shadow-lg cursor-ew-resize z-30 hover:scale-110 transition-transform touch-none"
                       />
                     </div>
                   )}
