@@ -52,3 +52,39 @@ export async function uploadToCloudinary(source: File | string): Promise<string>
 
   return data.secure_url as string;
 }
+
+// Cloudinary treats audio files through its "video" resource type endpoint.
+// Uses the same unsigned preset as images — works identically, just a different
+// upload URL, and returns a permanent cross-device link.
+const AUDIO_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`;
+
+export async function uploadAudioToCloudinary(source: File | string): Promise<string> {
+  const formData = new FormData();
+
+  if (typeof source === 'string') {
+    const blob = dataUrlToBlob(source);
+    formData.append('file', blob);
+  } else {
+    formData.append('file', source);
+  }
+
+  formData.append('upload_preset', UPLOAD_PRESET);
+
+  const response = await fetch(AUDIO_UPLOAD_URL, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errText = await response.text().catch(() => '');
+    throw new Error(`Cloudinary audio upload failed (${response.status}): ${errText}`);
+  }
+
+  const data = await response.json();
+
+  if (!data.secure_url) {
+    throw new Error('Cloudinary audio upload did not return a URL.');
+  }
+
+  return data.secure_url as string;
+}
