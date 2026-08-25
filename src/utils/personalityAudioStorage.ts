@@ -1,71 +1,49 @@
-// Personality Voice Audio Storage Engine with Firebase Storage & Firestore Cloud Sync & IndexedDB Caching
+// Personality Voice Audio Storage Engine — Cloudinary hosting + Firestore metadata + IndexedDB caching.
+// (Previously used Firebase Storage, which requires the paid Blaze plan; audio silently failed to
+// upload and stayed device-local only. Cloudinary is free and gives a real cross-device URL.)
 import { getIDBItem, setIDBItem, removeIDBItem } from './idbStorage';
-import {
-  db,
-  storage,
-  isFirestoreQuotaExceeded,
-  markFirestoreQuotaExceeded,
-  isQuotaError,
-} from '../lib/firebase';
-import {
-  collection,
-  doc,
-  setDoc,
-  deleteDoc,
-  getDoc,
-  getDocs,
-  onSnapshot,
-  writeBatch,
-} from 'firebase/firestore';
-import {
-  ref as storageRef,
-  uploadString,
-  getDownloadURL,
-  deleteObject,
-} from 'firebase/storage';
+import { db, isFirestoreQuotaExceeded, markFirestoreQuotaExceeded, isQuotaError } from '../lib/firebase';
+import { collection, doc, setDoc, deleteDoc, getDoc, getDocs, onSnapshot, writeBatch } from 'firebase/firestore';
+import { uploadAudioToCloudinary } from './cloudinaryUpload';
 
 /**
- * Saves a personality trait's audio to Firebase Storage and metadata to Firestore & IndexedDB.
+ * Saves a personality trait's audio to Cloudinary (permanent cross-device URL) and
+ * lightweight metadata to Firestore, plus an instant local IndexedDB cache.
  */
 export async function savePersonalityAudioToCloud(traitId: string, audioUrl: string): Promise<void> {
   if (!traitId) return;
 
-  // 1. Immediately cache locally in IndexedDB for instant offline and cross-tab access
   try {
     await setIDBItem(`hu_tao_personality_audio_${traitId}`, audioUrl);
   } catch (err) {
     console.warn('IDB personality audio save warning:', err);
   }
 
-  // 2. Persist to Firebase Storage & Firestore
   try {
     let downloadUrl = audioUrl;
-    let storagePath = `personalityAudio/${traitId}.mp3`;
 
     if (audioUrl.startsWith('data:')) {
       try {
-        const fileRef = storageRef(storage, storagePath);
-        await uploadString(fileRef, audioUrl, 'data_url');
-        downloadUrl = await getDownloadURL(fileRef);
-        // Cache download URL to IDB
+        downloadUrl = await uploadAudioToCloudinary(audioUrl);
         await setIDBItem(`hu_tao_personality_audio_${traitId}`, downloadUrl);
-      } catch (storageErr) {
-        console.warn('Personality audio Firebase Storage upload notice:', storageErr);
+      } catch (cloudErr) {
+        console.warn('Personality audio Cloudinary upload failed (staying local-only for now):', cloudErr);
+        return;
       }
     }
 
     if (!isFirestoreQuotaExceeded()) {
       const docRef = doc(db, 'personalityAudio', traitId);
-      const isDataTooLarge = downloadUrl.startsWith('data:') && downloadUrl.length > 50000;
-
-      await setDoc(docRef, {
-        traitId,
-        audioUrl: isDataTooLarge ? '' : downloadUrl,
-        storagePath,
-        isChunked: false,
-        size: `${Math.round(audioUrl.length / 1024)} KB`,
-        updatedAt: Date.now(),
-      }, { merge: true });
+      await setDoc(
+        docRef,
+        {
+          traitId,
+          audioUrl: downloadUrl,
+          isChunked: false,
+          updatedAt: Date.now(),
+        },
+        { merge: true }
+      );
     }
   } catch (err) {
     if (isQuotaError(err)) markFirestoreQuotaExceeded();
@@ -74,7 +52,7 @@ export async function savePersonalityAudioToCloud(traitId: string, audioUrl: str
 }
 
 /**
- * Deletes personality audio from Firebase Storage, Firestore and IndexedDB.
+ * Deletes personality audio from Firestore and IndexedDB.
  */
 export async function deletePersonalityAudioFromCloud(traitId: string): Promise<void> {
   if (!traitId) return;
@@ -84,15 +62,9 @@ export async function deletePersonalityAudioFromCloud(traitId: string): Promise<
   } catch (e) {}
 
   try {
-    // 1. Delete from Firebase Storage
-    try {
-      const fileRef = storageRef(storage, `personalityAudio/${traitId}.mp3`);
-      await deleteObject(fileRef);
-    } catch (e) {}
-
-    // 2. Clean legacy chunks if present and quota not exceeded
     if (!isFirestoreQuotaExceeded()) {
       const docRef = doc(db, 'personalityAudio', traitId);
+
       try {
         const chunksColl = collection(db, 'personalityAudio', traitId, 'chunks');
         const chunksSnap = await getDocs(chunksColl);
@@ -123,7 +95,7 @@ export async function loadPersonalityAudioFromLocal(traitId: string): Promise<st
 }
 
 /**
- * Fetch a single personality trait audio from Firebase Storage / Firestore.
+ * Fetch a single personality trait's audio URL from Firestore (works on any device).
  */
 export async function fetchPersonalityAudioFromCloud(traitId: string): Promise<string | null> {
   try {
@@ -133,13 +105,6 @@ export async function fetchPersonalityAudioFromCloud(traitId: string): Promise<s
 
     const data = snap.data();
     let audioUrl = data.audioUrl || '';
-
-    if (!audioUrl && data.storagePath) {
-      try {
-        const fileRef = storageRef(storage, data.storagePath);
-        audioUrl = await getDownloadURL(fileRef);
-      } catch (e) {}
-    }
 
     if (!audioUrl && data.isChunked && data.chunksCount) {
       const chunksColl = collection(db, 'personalityAudio', traitId, 'chunks');
@@ -169,7 +134,7 @@ export async function fetchPersonalityAudioFromCloud(traitId: string): Promise<s
 }
 
 /**
- * Realtime listener for all personality audios in Firebase Firestore.
+ * Realtime listener for all personality audios in Firestore.
  */
 export function subscribePersonalityAudios(
   onUpdate: (audioMap: Record<string, string>) => void
@@ -185,13 +150,6 @@ export function subscribePersonalityAudios(
           const data = docSnap.data();
           const traitId = data.traitId || docSnap.id;
           let audioUrl = data.audioUrl || '';
-
-          if (!audioUrl && data.storagePath) {
-            try {
-              const fileRef = storageRef(storage, data.storagePath);
-              audioUrl = await getDownloadURL(fileRef);
-            } catch (e) {}
-          }
 
           if (!audioUrl && data.isChunked && data.chunksCount) {
             try {
@@ -215,7 +173,6 @@ export function subscribePersonalityAudios(
 
           if (audioUrl) {
             audioMap[traitId] = audioUrl;
-            // Cache to IndexedDB for rapid subsequent tab opening
             setIDBItem(`hu_tao_personality_audio_${traitId}`, audioUrl).catch(() => {});
           }
         }
