@@ -177,12 +177,12 @@ export const ImageViewerModal: React.FC<ImageViewerModalProps> = ({
       ? createPortal(
           <AnimatePresence>
             <div
-              className="fixed inset-0 z-[99999] flex flex-col items-center justify-between p-3 sm:p-6 bg-black/95 backdrop-blur-2xl overflow-hidden select-none"
+              className="fixed inset-0 z-[99999] flex flex-col items-center justify-between p-3 sm:p-6 bg-black/95 overflow-hidden select-none"
               onClick={onClose}
             >
               {/* Top Control Bar */}
               <div
-                className="w-full max-w-6xl flex items-center justify-between z-30 py-2 px-4 rounded-2xl bg-[#180a0c]/80 border border-amber-500/30 backdrop-blur-md"
+                className={`w-full max-w-6xl flex items-center justify-between z-30 py-2 px-4 rounded-2xl bg-[#180a0c]/90 border border-amber-500/30 ${zoom <= 1 ? 'backdrop-blur-md' : ''}`}
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center gap-2">
@@ -330,7 +330,7 @@ export const ImageViewerModal: React.FC<ImageViewerModalProps> = ({
               {/* Bottom Caption Bar */}
               {(image.title || image.caption || (image.tags && image.tags.length > 0)) && (
                 <div
-                  className="w-full max-w-4xl z-30 p-4 rounded-2xl bg-[#180a0c]/85 border border-amber-500/30 backdrop-blur-md text-center space-y-1.5"
+                  className={`w-full max-w-4xl z-30 p-4 rounded-2xl bg-[#180a0c]/95 border border-amber-500/30 ${zoom <= 1 ? 'backdrop-blur-md' : ''} text-center space-y-1.5`}
                   onClick={(e) => e.stopPropagation()}
                 >
                   {image.title && (
