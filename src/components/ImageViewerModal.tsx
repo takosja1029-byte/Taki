@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -46,11 +46,34 @@ export const ImageViewerModal: React.FC<ImageViewerModalProps> = ({
   const [zoom, setZoom] = useState<number>(1);
   const [rotation, setRotation] = useState<number>(0);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  const isDraggingRef = useRef(false);
+  const dragMovedRef = useRef(false);
+  const dragStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
+  const pinchStartRef = useRef<{ distance: number; zoom: number } | null>(null);
+  const rafIdRef = useRef<number | null>(null);
+  const pendingRef = useRef<{ zoom?: number; pan?: { x: number; y: number } }>({});
+
+  const flushPending = () => {
+    if (pendingRef.current.zoom !== undefined) setZoom(pendingRef.current.zoom);
+    if (pendingRef.current.pan !== undefined) setPan(pendingRef.current.pan);
+    pendingRef.current = {};
+    rafIdRef.current = null;
+  };
+
+  const scheduleUpdate = (next: { zoom?: number; pan?: { x: number; y: number } }) => {
+    pendingRef.current = { ...pendingRef.current, ...next };
+    if (rafIdRef.current === null) {
+      rafIdRef.current = requestAnimationFrame(flushPending);
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
       setZoom(1);
       setRotation(0);
+      setPan({ x: 0, y: 0 });
     }
   }, [isOpen, image]);
 
@@ -68,8 +91,65 @@ export const ImageViewerModal: React.FC<ImageViewerModalProps> = ({
   if (!isOpen || !image) return null;
 
   const handleZoomIn = () => setZoom((prev) => Math.min(prev + 0.3, 3.5));
-  const handleZoomOut = () => setZoom((prev) => Math.max(prev - 0.3, 0.7));
+  const handleZoomOut = () =>
+    setZoom((prev) => {
+      const next = Math.max(prev - 0.3, 0.7);
+      if (next <= 1) setPan({ x: 0, y: 0 });
+      return next;
+    });
   const handleRotate = () => setRotation((prev) => (prev + 90) % 360);
+
+  // --- Drag-to-pan (mouse + single-finger touch via Pointer Events) ---
+  const handlePointerDown = (e: React.PointerEvent<HTMLImageElement>) => {
+    if (zoom <= 1) return;
+    isDraggingRef.current = true;
+    dragMovedRef.current = false;
+    dragStartRef.current = { x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y };
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLImageElement>) => {
+    if (!isDraggingRef.current) return;
+    const dx = e.clientX - dragStartRef.current.x;
+    const dy = e.clientY - dragStartRef.current.y;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) dragMovedRef.current = true;
+    scheduleUpdate({ pan: { x: dragStartRef.current.panX + dx, y: dragStartRef.current.panY + dy } });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLImageElement>) => {
+    isDraggingRef.current = false;
+    try {
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+  };
+
+  // --- Pinch-to-zoom (two-finger touch) ---
+  const getTouchDistance = (touches: React.TouchList) => {
+    const [a, b] = [touches[0], touches[1]];
+    return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLImageElement>) => {
+    if (e.touches.length === 2) {
+      pinchStartRef.current = { distance: getTouchDistance(e.touches), zoom };
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLImageElement>) => {
+    if (e.touches.length === 2 && pinchStartRef.current) {
+      e.preventDefault();
+      const newDistance = getTouchDistance(e.touches);
+      const scaleFactor = newDistance / pinchStartRef.current.distance;
+      const nextZoom = Math.min(3.5, Math.max(0.7, pinchStartRef.current.zoom * scaleFactor));
+      scheduleUpdate({ zoom: nextZoom });
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLImageElement>) => {
+    if (e.touches.length < 2) {
+      pinchStartRef.current = null;
+    }
+  };
 
   const handleDownload = () => {
     const link = document.createElement('a');
@@ -203,11 +283,34 @@ export const ImageViewerModal: React.FC<ImageViewerModalProps> = ({
                     src={image.src}
                     alt={image.alt || image.title || 'Full Picture'}
                     style={{
-                      transform: `scale(${zoom}) rotate(${rotation}deg)`,
-                      transition: 'transform 0.25s ease-out',
+                      transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom}) rotate(${rotation}deg)`,
+                      transition: isDraggingRef.current ? 'none' : 'transform 0.25s ease-out',
+                      touchAction: 'none',
                     }}
-                    className="max-w-full max-h-[78vh] object-contain rounded-2xl border-2 border-amber-500/30 shadow-[0_0_50px_rgba(247,127,0,0.3)] cursor-zoom-in"
-                    onClick={() => setZoom((prev) => (prev > 1.2 ? 1 : 1.8))}
+                    className={`max-w-full max-h-[78vh] object-contain rounded-2xl border-2 border-amber-500/30 shadow-[0_0_50px_rgba(247,127,0,0.3)] select-none ${
+                      zoom > 1 ? 'cursor-grab active:cursor-grabbing' : 'cursor-zoom-in'
+                    }`}
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    onPointerCancel={handlePointerUp}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    onClick={() => {
+                      // Ignore the click that immediately follows a drag, so panning
+                      // doesn't accidentally toggle the zoom level off.
+                      if (dragMovedRef.current) {
+                        dragMovedRef.current = false;
+                        return;
+                      }
+                      setZoom((prev) => {
+                        const next = prev > 1.2 ? 1 : 1.8;
+                        if (next <= 1) setPan({ x: 0, y: 0 });
+                        return next;
+                      });
+                    }}
+                    draggable={false}
                   />
                 </motion.div>
 
