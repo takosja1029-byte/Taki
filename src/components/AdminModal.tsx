@@ -228,6 +228,49 @@ const HeroContentEditor: React.FC<{
           <p className="text-[11px] text-rose-200/50">
             Preview: {form.titlePrefix} <span className="text-amber-300">{form.titleHighlight}</span> {form.titleSuffix}
           </p>
+
+          <div className="pt-3 border-t border-red-500/20 space-y-3">
+            <h5 className="text-xs font-semibold text-amber-300">
+              "Full View" Artwork Info (shown when someone clicks your hero photo)
+            </h5>
+            <div>
+              <label className="block text-xs font-semibold text-rose-200/80 mb-1">Artwork Title</label>
+              <input
+                type="text"
+                value={form.artworkTitle}
+                onChange={(e) => setForm({ ...form, artworkTitle: e.target.value })}
+                placeholder="e.g. Tak Main Artwork"
+                className="w-full px-3.5 py-2 rounded-xl bg-[#200b0e] border border-red-500/30 text-white text-xs focus:outline-none focus:border-amber-400"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-rose-200/80 mb-1">Artwork Caption</label>
+              <input
+                type="text"
+                value={form.artworkCaption}
+                onChange={(e) => setForm({ ...form, artworkCaption: e.target.value })}
+                placeholder="e.g. Director of the Wangsheng Funeral Parlor in Liyue Harbor"
+                className="w-full px-3.5 py-2 rounded-xl bg-[#200b0e] border border-red-500/30 text-white text-xs focus:outline-none focus:border-amber-400"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-rose-200/80 mb-1">
+                Tags (comma-separated, e.g. "Tak, Wangsheng, Genshin Impact, Pyro")
+              </label>
+              <input
+                type="text"
+                value={form.artworkTags.join(', ')}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    artworkTags: e.target.value.split(',').map((t) => t.trim()).filter(Boolean),
+                  })
+                }
+                className="w-full px-3.5 py-2 rounded-xl bg-[#200b0e] border border-red-500/30 text-white text-xs focus:outline-none focus:border-amber-400"
+              />
+            </div>
+          </div>
+
           <button
             type="submit"
             className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 text-white font-display text-xs font-bold shadow-md hover:scale-102 transition-transform cursor-pointer"
