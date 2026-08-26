@@ -109,6 +109,9 @@ export const DEFAULT_HERO_CONTENT: HeroContent = {
   titlePrefix: 'Welcome to',
   titleHighlight: "Tak's",
   titleSuffix: 'World',
+  artworkTitle: 'Tak Main Artwork',
+  artworkCaption: 'Director of the Wangsheng Funeral Parlor in Liyue Harbor',
+  artworkTags: ['Tak', 'Wangsheng', 'Genshin Impact', 'Pyro'],
 };
 
 export const DEFAULT_SECTION_HEADERS: Record<SectionHeaderKey, SectionHeaderContent> = {
