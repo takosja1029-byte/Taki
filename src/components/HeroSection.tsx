@@ -258,9 +258,9 @@ export const HeroSection: React.FC = () => {
         isOpen={isViewerOpen}
         image={{
           src: siteImages.hero,
-          title: 'Tak Main Artwork',
-          caption: 'Director of the Wangsheng Funeral Parlor in Liyue Harbor',
-          tags: ['Tak', 'Wangsheng', 'Genshin Impact', 'Pyro'],
+          title: heroContent.artworkTitle,
+          caption: heroContent.artworkCaption,
+          tags: heroContent.artworkTags,
         }}
         onClose={() => setIsViewerOpen(false)}
       />
