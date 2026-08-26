@@ -61,6 +61,9 @@ export interface HeroContent {
   titlePrefix: string;
   titleHighlight: string;
   titleSuffix: string;
+  artworkTitle: string;
+  artworkCaption: string;
+  artworkTags: string[];
 }
 
 export interface SectionHeaderContent {
