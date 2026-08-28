@@ -436,6 +436,15 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         audioUrl: t.audioUrl && t.audioUrl.startsWith('data:') ? '[FIREBASE_AUDIO]' : t.audioUrl,
       }));
     }
+    // Gallery item photos are uploaded to Cloudinary and should already be short URLs by the
+    // time they get here — but as a safety net, strip any raw base64 that slipped through
+    // (e.g. a failed Cloudinary upload) so a single oversized item can't fail the whole write.
+    if (sanitizedPartial.galleryItems && Array.isArray(sanitizedPartial.galleryItems)) {
+      sanitizedPartial.galleryItems = (sanitizedPartial.galleryItems as GalleryItem[]).map((g) => ({
+        ...g,
+        imageUrl: g.imageUrl && g.imageUrl.startsWith('data:') ? '[LOCAL_IMAGE]' : g.imageUrl,
+      }));
+    }
     // Site images (hero banner, ghost companion, about portrait) are uploaded as full-resolution
     // base64 photos which alone can exceed Firestore's 1MB per-document limit. Rather than risk
     // silently failing the whole write, keep images local-only (already saved reliably to
@@ -460,9 +469,12 @@ export const AppDataProvider: React.FC<{ children: ReactNode }> = ({ children })
         const docRef = doc(db, 'appData', 'config');
         await setDoc(docRef, payload, { merge: true });
       } catch (e) {
-        if (isQuotaError(e)) {
-          markFirestoreQuotaExceeded();
-        }
+        // Any failed write means the cloud copy is now stale relative to what's saved
+        // locally — not just literal "quota exceeded" errors (e.g. oversized document,
+        // permission issues, network hiccups). Treat all of these the same way: stop
+        // trusting incoming cloud snapshots so they can't silently overwrite local edits,
+        // exactly like the bug that caused site images to revert to default earlier.
+        markFirestoreQuotaExceeded();
         console.info('Firestore save notice:', e);
       }
     }, 1200);
